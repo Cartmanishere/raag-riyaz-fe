@@ -24,12 +24,13 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export default function StudentDetailPage({
+export default async function StudentDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const student = students.find((s) => s.id === Number(params.id));
+  const { id } = await params;
+  const student = students.find((s) => s.id === Number(id));
   if (!student) notFound();
 
   const studentRecordings = recordings.filter((r) =>

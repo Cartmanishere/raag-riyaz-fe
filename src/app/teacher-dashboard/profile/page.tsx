@@ -36,12 +36,12 @@ export default function ProfilePage() {
       {
         icon: <BusinessIcon sx={{ color: "primary.main" }} />,
         label: "Organization",
-        value: actor?.org_id ?? "-",
+        value: actor?.orgId ?? "-",
       },
       {
         icon: <BadgeIcon sx={{ color: "primary.main" }} />,
         label: "User ID",
-        value: actor?.user_id ?? "-",
+        value: actor?.userId ?? "-",
       },
     ],
     [actor]

@@ -1,6 +1,9 @@
 # Title
 API Types And Client
 
+## Status
+Done
+
 ## Scope
 - Replace the current generic API wrapper assumptions with typed domain-specific API methods.
 - Add FE-safe model mapping for auth, users, recordings, playback, assignments, and dashboard data.
