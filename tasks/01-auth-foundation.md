@@ -1,6 +1,9 @@
 # Title
 Auth Foundation
 
+## Status
+Completed
+
 ## Scope
 - Replace mock login with backend authentication.
 - Add client-side session storage for access token, refresh token, and actor context.

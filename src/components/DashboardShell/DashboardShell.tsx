@@ -25,7 +25,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import PeopleIcon from "@mui/icons-material/People";
 import AudiotrackIcon from "@mui/icons-material/Audiotrack";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
-import { teachers } from "@/data/seed";
+import { useActorDisplay, useAuth } from "@/components/Auth/AuthProvider";
 
 const DRAWER_WIDTH = 240;
 const MINI_WIDTH = 64;
@@ -43,9 +43,6 @@ const navItems = [
   },
 ];
 
-// Use first teacher from seed data as the logged-in teacher
-const currentTeacher = teachers[0];
-
 interface DashboardShellProps {
   children: React.ReactNode;
 }
@@ -56,6 +53,8 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   const [open, setOpen] = React.useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const { actor } = useAuth();
+  const { displayName, initials } = useActorDisplay();
 
   React.useEffect(() => {
     if (isMobile) setOpen(false);
@@ -165,7 +164,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           <Typography variant="h6" fontWeight={600} sx={{ flexGrow: 1 }}>
             Teacher Dashboard
           </Typography>
-          <Tooltip title={`${currentTeacher.name} — Profile`}>
+          <Tooltip title={`${displayName || actor?.email || "Teacher"} - Profile`}>
             <IconButton
               onClick={() => router.push("/teacher-dashboard/profile")}
               sx={{ p: 0.5 }}
@@ -181,7 +180,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                   border: "2px solid rgba(255,255,255,0.5)",
                 }}
               >
-                {currentTeacher.initials}
+                {initials}
               </Avatar>
             </IconButton>
           </Tooltip>
