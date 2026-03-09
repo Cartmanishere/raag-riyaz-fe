@@ -1,6 +1,9 @@
 # Title
 Teacher Shell And Profile
 
+## Status
+Done
+
 ## Scope
 - Replace seed-based teacher identity in the dashboard shell and profile screen with backend-authenticated data.
 - Wire logout into the real auth/session flow.

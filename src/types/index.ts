@@ -105,6 +105,9 @@ export interface AuthActor {
   email: string;
   orgId: string;
   role: string;
+  displayName?: string | null;
+  phone?: string | null;
+  status?: string;
 }
 
 export interface AuthSession {

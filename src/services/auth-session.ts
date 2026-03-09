@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthSession } from "@/types";
+import { AuthActor, AuthSession } from "@/types";
 
 const STORAGE_KEY = "raag-riyaz.auth.session";
 
@@ -61,7 +61,12 @@ export function clearSessionSnapshot() {
   setSessionSnapshot(null);
 }
 
-export function deriveActorDisplayName(email: string) {
+export function deriveActorDisplayName(actor: Pick<AuthActor, "email" | "displayName">) {
+  if (actor.displayName && actor.displayName.trim().length > 0) {
+    return actor.displayName.trim();
+  }
+
+  const email = actor.email;
   const localPart = email.split("@")[0] ?? email;
   return localPart
     .split(/[._-]+/)
@@ -70,8 +75,8 @@ export function deriveActorDisplayName(email: string) {
     .join(" ");
 }
 
-export function deriveActorInitials(email: string) {
-  const displayName = deriveActorDisplayName(email);
+export function deriveActorInitials(actor: Pick<AuthActor, "email" | "displayName">) {
+  const displayName = deriveActorDisplayName(actor);
   const parts = displayName.split(" ").filter(Boolean);
 
   if (parts.length === 0) {

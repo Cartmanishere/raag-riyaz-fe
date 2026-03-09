@@ -14,6 +14,8 @@ import EmailIcon from "@mui/icons-material/Email";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import BadgeIcon from "@mui/icons-material/Badge";
 import BusinessIcon from "@mui/icons-material/Business";
+import PhoneIcon from "@mui/icons-material/Phone";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import LogoutButton from "@/components/LogoutButton/LogoutButton";
 import { useActorDisplay, useAuth } from "@/components/Auth/AuthProvider";
 
@@ -22,28 +24,39 @@ export default function ProfilePage() {
   const { displayName, initials } = useActorDisplay();
 
   const details = React.useMemo(
-    () => [
-      {
-        icon: <EmailIcon sx={{ color: "primary.main" }} />,
-        label: "Email",
-        value: actor?.email ?? "-",
-      },
-      {
-        icon: <WorkspacePremiumIcon sx={{ color: "primary.main" }} />,
-        label: "Teacher Role",
-        value: actor?.role ?? "-",
-      },
-      {
-        icon: <BusinessIcon sx={{ color: "primary.main" }} />,
-        label: "Organization",
-        value: actor?.orgId ?? "-",
-      },
-      {
-        icon: <BadgeIcon sx={{ color: "primary.main" }} />,
-        label: "User ID",
-        value: actor?.userId ?? "-",
-      },
-    ],
+    () =>
+      [
+        {
+          icon: <EmailIcon sx={{ color: "primary.main" }} />,
+          label: "Email",
+          value: actor?.email ?? "-",
+        },
+        {
+          icon: <WorkspacePremiumIcon sx={{ color: "primary.main" }} />,
+          label: "Role",
+          value: actor?.role ?? "-",
+        },
+        {
+          icon: <VerifiedUserIcon sx={{ color: "primary.main" }} />,
+          label: "Status",
+          value: actor?.status ?? "-",
+        },
+        {
+          icon: <PhoneIcon sx={{ color: "primary.main" }} />,
+          label: "Phone",
+          value: actor?.phone ?? "-",
+        },
+        {
+          icon: <BusinessIcon sx={{ color: "primary.main" }} />,
+          label: "Organization",
+          value: actor?.orgId ?? "-",
+        },
+        {
+          icon: <BadgeIcon sx={{ color: "primary.main" }} />,
+          label: "User ID",
+          value: actor?.userId ?? "-",
+        },
+      ].filter((detail) => detail.value !== "-"),
     [actor]
   );
 
@@ -83,7 +96,7 @@ export default function ProfilePage() {
                   {displayName || actor?.email || "Teacher"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {actor?.email ?? "Authenticated teacher account"}
+                  {actor?.role ?? "Teacher"}
                 </Typography>
               </Box>
               <Box sx={{ width: "100%", px: 1, pt: 1 }}>
@@ -105,9 +118,8 @@ export default function ProfilePage() {
                 color="text.secondary"
                 sx={{ mb: 3 }}
               >
-                Your teacher session is managed by the backend identity service.
-                This screen reflects the authenticated actor context currently
-                available from the auth API.
+                This profile reflects the authenticated backend account and only
+                shows fields currently provided by the API.
               </Typography>
 
               <Divider sx={{ mb: 3 }} />

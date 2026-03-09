@@ -6,6 +6,7 @@ import {
   AppBar,
   Avatar,
   Box,
+  ButtonBase,
   Divider,
   Drawer,
   IconButton,
@@ -165,10 +166,27 @@ export default function DashboardShell({ children }: DashboardShellProps) {
             Teacher Dashboard
           </Typography>
           <Tooltip title={`${displayName || actor?.email || "Teacher"} - Profile`}>
-            <IconButton
+            <ButtonBase
               onClick={() => router.push("/teacher-dashboard/profile")}
-              sx={{ p: 0.5 }}
+              aria-label="Open profile"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                cursor: "pointer",
+                borderRadius: 999,
+                px: 1,
+                py: 0.5,
+              }}
             >
+              <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
+                <Typography variant="body2" fontWeight={600} lineHeight={1.2}>
+                  {displayName || actor?.email || "Teacher"}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.8, lineHeight: 1.2 }}>
+                  {actor?.email ?? ""}
+                </Typography>
+              </Box>
               <Avatar
                 sx={{
                   bgcolor: "secondary.main",
@@ -182,7 +200,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
               >
                 {initials}
               </Avatar>
-            </IconButton>
+            </ButtonBase>
           </Tooltip>
         </Toolbar>
       </AppBar>
