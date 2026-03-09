@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import ClientRedirect from "@/components/Redirect/ClientRedirect";
 
 export default function TeacherDashboardPage() {
-  redirect("/teacher-dashboard/students");
+  return <ClientRedirect href="/teacher-dashboard/students" />;
 }

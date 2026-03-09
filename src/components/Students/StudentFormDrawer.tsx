@@ -2,97 +2,134 @@
 
 import * as React from "react";
 import {
+  Alert,
   Box,
   Button,
   Divider,
   Drawer,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  TextField,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { Student } from "@/data/seed";
+import { User } from "@/types";
 
-type Level = "Beginner" | "Intermediate" | "Advanced";
-type Status = "Active" | "Inactive";
+export type StudentStatus = "active" | "inactive";
 
-interface FormValues {
-  name: string;
+export interface StudentFormValues {
+  displayName: string;
   email: string;
-  status: Status;
-  level: Level;
+  phone: string;
+  status: StudentStatus;
+  password: string;
 }
 
 interface StudentFormDrawerProps {
   open: boolean;
   mode: "add" | "edit";
-  student?: Student;
+  student?: User;
+  isSaving?: boolean;
+  submitError?: string | null;
   onClose: () => void;
-  onSave: (values: FormValues) => void;
+  onSave: (values: StudentFormValues) => void;
 }
 
-const empty: FormValues = {
-  name: "",
+const empty: StudentFormValues = {
+  displayName: "",
   email: "",
-  status: "Active",
-  level: "Beginner",
+  phone: "",
+  status: "active",
+  password: "",
 };
+
+type FormErrors = Partial<Record<keyof StudentFormValues, string>>;
+
+function formatStatusLabel(status: StudentStatus) {
+  return status === "active" ? "Active" : "Inactive";
+}
+
+function getInitialFormValues(mode: "add" | "edit", student?: User): StudentFormValues {
+  if (mode === "edit" && student) {
+    return {
+      displayName: student.displayName ?? "",
+      email: student.email,
+      phone: student.phone ?? "",
+      status: student.status.toLowerCase() === "inactive" ? "inactive" : "active",
+      password: "",
+    };
+  }
+
+  return empty;
+}
 
 export default function StudentFormDrawer({
   open,
   mode,
   student,
+  isSaving = false,
+  submitError,
   onClose,
   onSave,
 }: StudentFormDrawerProps) {
-  const [form, setForm] = React.useState<FormValues>(empty);
-  const [errors, setErrors] = React.useState<Partial<FormValues>>({});
+  const [form, setForm] = React.useState<StudentFormValues>(empty);
+  const [errors, setErrors] = React.useState<FormErrors>({});
 
-  // Sync form when drawer opens
   React.useEffect(() => {
-    if (open) {
-      if (mode === "edit" && student) {
-        setForm({
-          name: student.name,
-          email: student.email,
-          status: student.status,
-          level: student.level,
-        });
-      } else {
-        setForm(empty);
-      }
-      setErrors({});
+    if (!open) {
+      return;
     }
+
+    setForm(getInitialFormValues(mode, student));
+    setErrors({});
   }, [open, mode, student]);
 
   const validate = () => {
-    const e: Partial<FormValues> = {};
-    if (!form.name.trim()) e.name = "Name is required";
-    if (!form.email.trim()) e.email = "Email is required";
-    return e;
+    const nextErrors: FormErrors = {};
+
+    if (!form.displayName.trim()) {
+      nextErrors.displayName = "Name is required";
+    }
+
+    if (!form.email.trim()) {
+      nextErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      nextErrors.email = "Enter a valid email address";
+    }
+
+    if (mode === "add" && !form.password.trim()) {
+      nextErrors.password = "Password is required";
+    }
+
+    return nextErrors;
   };
 
   const handleSave = () => {
-    const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
-    onSave(form);
+    const nextErrors = validate();
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    onSave({
+      ...form,
+      displayName: form.displayName.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      password: form.password.trim(),
+    });
   };
 
   return (
     <Drawer
       anchor="right"
       open={open}
-      onClose={onClose}
-      PaperProps={{ sx: { width: { xs: "100%", sm: 400 }, p: 0 } }}
+      onClose={isSaving ? undefined : onClose}
+      PaperProps={{ sx: { width: { xs: "100%", sm: 420 }, p: 0 } }}
     >
-      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -107,21 +144,23 @@ export default function StudentFormDrawer({
         <Typography variant="h6" fontWeight={700}>
           {mode === "add" ? "Add Student" : "Edit Student"}
         </Typography>
-        <IconButton onClick={onClose} size="small">
+        <IconButton onClick={onClose} size="small" disabled={isSaving}>
           <CloseIcon />
         </IconButton>
       </Box>
 
-      {/* Form */}
       <Box sx={{ px: 3, py: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+        {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+
         <TextField
           label="Name"
           fullWidth
-          value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          error={!!errors.name}
-          helperText={errors.name}
+          value={form.displayName}
+          onChange={(event) => setForm((current) => ({ ...current, displayName: event.target.value }))}
+          error={!!errors.displayName}
+          helperText={errors.displayName}
           required
+          disabled={isSaving}
         />
 
         <TextField
@@ -129,13 +168,34 @@ export default function StudentFormDrawer({
           fullWidth
           type="email"
           value={form.email}
-          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+          onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
           error={!!errors.email}
           helperText={errors.email}
           required
+          disabled={isSaving}
         />
 
-        {/* Status toggle */}
+        <TextField
+          label="Phone"
+          fullWidth
+          value={form.phone}
+          onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+          helperText="Optional"
+          disabled={isSaving}
+        />
+
+        <TextField
+          label={mode === "add" ? "Password" : "Password (leave blank to keep current)"}
+          fullWidth
+          type="password"
+          value={form.password}
+          onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+          error={!!errors.password}
+          helperText={errors.password ?? (mode === "add" ? undefined : "Optional")}
+          required={mode === "add"}
+          disabled={isSaving}
+        />
+
         <Box>
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
             Status
@@ -143,8 +203,13 @@ export default function StudentFormDrawer({
           <ToggleButtonGroup
             exclusive
             value={form.status}
-            onChange={(_, v) => { if (v) setForm((f) => ({ ...f, status: v })); }}
+            onChange={(_, value: StudentStatus | null) => {
+              if (value) {
+                setForm((current) => ({ ...current, status: value }));
+              }
+            }}
             size="small"
+            disabled={isSaving}
             sx={{
               "& .MuiToggleButton-root": {
                 px: 3,
@@ -158,35 +223,20 @@ export default function StudentFormDrawer({
               },
             }}
           >
-            <ToggleButton value="Active">Active</ToggleButton>
-            <ToggleButton value="Inactive">Inactive</ToggleButton>
+            <ToggleButton value="active">{formatStatusLabel("active")}</ToggleButton>
+            <ToggleButton value="inactive">{formatStatusLabel("inactive")}</ToggleButton>
           </ToggleButtonGroup>
         </Box>
-
-        {/* Level select */}
-        <FormControl fullWidth>
-          <InputLabel>Level</InputLabel>
-          <Select
-            value={form.level}
-            label="Level"
-            onChange={(e) => setForm((f) => ({ ...f, level: e.target.value as Level }))}
-          >
-            <MenuItem value="Beginner">Beginner</MenuItem>
-            <MenuItem value="Intermediate">Intermediate</MenuItem>
-            <MenuItem value="Advanced">Advanced</MenuItem>
-          </Select>
-        </FormControl>
       </Box>
 
       <Divider />
 
-      {/* Footer actions */}
       <Stack direction="row" spacing={2} sx={{ px: 3, py: 2, justifyContent: "flex-end" }}>
-        <Button variant="outlined" onClick={onClose}>
+        <Button variant="outlined" onClick={onClose} disabled={isSaving}>
           Cancel
         </Button>
-        <Button variant="contained" onClick={handleSave}>
-          Save
+        <Button variant="contained" onClick={handleSave} disabled={isSaving}>
+          {isSaving ? "Saving..." : mode === "add" ? "Create Student" : "Save Changes"}
         </Button>
       </Stack>
     </Drawer>

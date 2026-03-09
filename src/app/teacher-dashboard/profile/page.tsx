@@ -1,3 +1,6 @@
+"use client";
+
+import * as React from "react";
 import {
   Avatar,
   Box,
@@ -8,41 +11,55 @@ import {
   Typography,
 } from "@mui/material";
 import EmailIcon from "@mui/icons-material/Email";
-import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
-import PeopleIcon from "@mui/icons-material/People";
-import { teachers, students } from "@/data/seed";
+import BadgeIcon from "@mui/icons-material/Badge";
+import BusinessIcon from "@mui/icons-material/Business";
+import PhoneIcon from "@mui/icons-material/Phone";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import LogoutButton from "@/components/LogoutButton/LogoutButton";
-
-const currentTeacher = teachers[0];
-const teacherStudents = students.filter(
-  (s) => s.teacherId === currentTeacher.id
-);
-
-const details = [
-  {
-    icon: <EmailIcon sx={{ color: "primary.main" }} />,
-    label: "Email",
-    value: currentTeacher.email,
-  },
-  {
-    icon: <MusicNoteIcon sx={{ color: "primary.main" }} />,
-    label: "Specialization",
-    value: currentTeacher.specialization,
-  },
-  {
-    icon: <WorkspacePremiumIcon sx={{ color: "primary.main" }} />,
-    label: "Experience",
-    value: currentTeacher.experience,
-  },
-  {
-    icon: <PeopleIcon sx={{ color: "primary.main" }} />,
-    label: "Students",
-    value: `${teacherStudents.length} enrolled`,
-  },
-];
+import { useActorDisplay, useAuth } from "@/components/Auth/AuthProvider";
 
 export default function ProfilePage() {
+  const { actor } = useAuth();
+  const { displayName, initials } = useActorDisplay();
+
+  const details = React.useMemo(
+    () =>
+      [
+        {
+          icon: <EmailIcon sx={{ color: "primary.main" }} />,
+          label: "Email",
+          value: actor?.email ?? "-",
+        },
+        {
+          icon: <WorkspacePremiumIcon sx={{ color: "primary.main" }} />,
+          label: "Role",
+          value: actor?.role ?? "-",
+        },
+        {
+          icon: <VerifiedUserIcon sx={{ color: "primary.main" }} />,
+          label: "Status",
+          value: actor?.status ?? "-",
+        },
+        {
+          icon: <PhoneIcon sx={{ color: "primary.main" }} />,
+          label: "Phone",
+          value: actor?.phone ?? "-",
+        },
+        {
+          icon: <BusinessIcon sx={{ color: "primary.main" }} />,
+          label: "Organization",
+          value: actor?.orgId ?? "-",
+        },
+        {
+          icon: <BadgeIcon sx={{ color: "primary.main" }} />,
+          label: "User ID",
+          value: actor?.userId ?? "-",
+        },
+      ].filter((detail) => detail.value !== "-"),
+    [actor]
+  );
+
   return (
     <Box>
       <Typography variant="h4" fontWeight={700} sx={{ mb: 4 }}>
@@ -72,14 +89,14 @@ export default function ProfilePage() {
                   fontWeight: 700,
                 }}
               >
-                {currentTeacher.initials}
+                {initials}
               </Avatar>
               <Box sx={{ textAlign: "center" }}>
                 <Typography variant="h6" fontWeight={700}>
-                  {currentTeacher.name}
+                  {displayName || actor?.email || "Teacher"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {currentTeacher.specialization} Teacher
+                  {actor?.role ?? "Teacher"}
                 </Typography>
               </Box>
               <Box sx={{ width: "100%", px: 1, pt: 1 }}>
@@ -101,7 +118,8 @@ export default function ProfilePage() {
                 color="text.secondary"
                 sx={{ mb: 3 }}
               >
-                {currentTeacher.bio}
+                This profile reflects the authenticated backend account and only
+                shows fields currently provided by the API.
               </Typography>
 
               <Divider sx={{ mb: 3 }} />

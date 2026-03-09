@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { teachers, students } from "@/data/seed";
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
   Card,
   CardContent,
   Divider,
@@ -18,28 +19,39 @@ import {
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { ApiError } from "@/types";
+import { useAuth } from "@/components/Auth/AuthProvider";
+import { isAdminActor, logout } from "@/services/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { loginWithPassword, status } = useAuth();
   const [showPassword, setShowPassword] = React.useState(false);
-  const [form, setForm] = React.useState({ username: "", password: "" });
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [form, setForm] = React.useState({ email: "", password: "" });
   const [error, setError] = React.useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
-    const teacher = teachers.find(
-      (t) => t.username === form.username && t.password === form.password
-    );
-    if (teacher) return router.push("/teacher-dashboard/students");
+    try {
+      const session = await loginWithPassword(form);
 
-    const student = students.find(
-      (s) => s.username === form.username && s.password === form.password
-    );
-    if (student) return router.push("/");
+      if (!isAdminActor(session.actor.role)) {
+        await logout();
+        setError("This account does not have teacher access.");
+        return;
+      }
 
-    setError("Invalid username or password.");
+      router.replace("/teacher-dashboard/students");
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.message || "Unable to sign in.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -75,15 +87,15 @@ export default function LoginPage() {
 
           <Divider sx={{ mb: 3 }} />
 
-          {/* Login form */}
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <TextField
               fullWidth
-              label="Username"
+              label="Email"
               variant="outlined"
-              autoComplete="username"
-              value={form.username}
-              onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               sx={{ mb: 2 }}
               required
             />
@@ -113,7 +125,6 @@ export default function LoginPage() {
               }}
             />
 
-            {/* Forgot password */}
             <Box sx={{ textAlign: "right", mb: 3 }}>
               <Link
                 href="/forgot-password"
@@ -125,24 +136,17 @@ export default function LoginPage() {
               </Link>
             </Box>
 
-            {error && (
-              <Typography
-                variant="body2"
-                color="error"
-                sx={{ mb: 2, textAlign: "center" }}
-              >
-                {error}
-              </Typography>
-            )}
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
             <Button
               type="submit"
               fullWidth
               variant="contained"
               size="large"
+              disabled={isSubmitting || status === "loading"}
               sx={{ py: 1.25, fontSize: "1rem" }}
             >
-              Log in
+              {isSubmitting ? <CircularProgress size={24} color="inherit" /> : "Log in"}
             </Button>
           </Box>
         </CardContent>
