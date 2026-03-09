@@ -58,7 +58,7 @@ export default function StudentRow({ student, onEdit }: StudentRowProps) {
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography
           component={Link}
-          href={`/teacher-dashboard/students/${student.id}`}
+          href={`/teacher-dashboard/students/detail?id=${student.id}`}
           variant="body2"
           fontWeight={600}
           noWrap
