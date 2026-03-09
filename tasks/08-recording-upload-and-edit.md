@@ -1,6 +1,9 @@
 # Title
 Recording Upload And Edit
 
+## Status
+Done
+
 ## Scope
 - Wire recording create and edit flows to backend recording endpoints.
 - Support multipart upload for audio files.

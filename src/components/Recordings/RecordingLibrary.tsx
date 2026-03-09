@@ -2,57 +2,87 @@
 
 import * as React from "react";
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
   FormControl,
   Grid,
   InputAdornment,
   InputLabel,
   MenuItem,
   Select,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import UploadIcon from "@mui/icons-material/Upload";
 import SearchIcon from "@mui/icons-material/Search";
-import {
-  Recording,
-  recordings as seedRecordings,
-  students,
-  teachers,
-} from "@/data/seed";
 import RecordingCard from "./RecordingCard";
-import RecordingFormDialog from "./RecordingFormDialog";
+import RecordingFormDialog, { RecordingFormValues } from "./RecordingFormDialog";
 import RecordingDetailDrawer from "./RecordingDetailDrawer";
-import DeleteRecordingDialog from "./DeleteRecordingDialog";
+import { adminRecordingsApi } from "@/services/api";
+import { ApiError, Recording } from "@/types";
 
-const currentTeacher = teachers[0];
+function toErrorMessage(error: ApiError | null, fallback: string) {
+  return error?.message ?? fallback;
+}
 
 export default function RecordingLibrary() {
-  const [recordings, setRecordings] = React.useState<Recording[]>(
-    seedRecordings.filter((r) => r.teacherId === currentTeacher.id)
-  );
+  const [recordings, setRecordings] = React.useState<Recording[]>([]);
   const [search, setSearch] = React.useState("");
   const [raagFilter, setRaagFilter] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<ApiError | null>(null);
 
-  // Detail drawer
   const [detailOpen, setDetailOpen] = React.useState(false);
   const [selectedRecording, setSelectedRecording] = React.useState<Recording | undefined>();
 
-  // Form dialog
   const [formOpen, setFormOpen] = React.useState(false);
   const [formMode, setFormMode] = React.useState<"add" | "edit">("add");
   const [editTarget, setEditTarget] = React.useState<Recording | undefined>();
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
 
-  // Delete dialog
-  const [deleteTarget, setDeleteTarget] = React.useState<Recording | undefined>();
+  const loadRecordings = React.useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-  // Unique raags for filter dropdown
-  const raagOptions = Array.from(new Set(recordings.map((r) => r.raag))).sort();
+    try {
+      const nextRecordings = await adminRecordingsApi.list();
+      setRecordings(nextRecordings);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError({
+        code: apiError?.code,
+        message: apiError?.message ?? "Failed to load recordings.",
+        statusCode: apiError?.statusCode ?? 500,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const filtered = recordings.filter((r) => {
-    const matchesSearch = r.title.toLowerCase().includes(search.toLowerCase());
-    const matchesRaag = raagFilter ? r.raag === raagFilter : true;
+  React.useEffect(() => {
+    void loadRecordings();
+  }, [loadRecordings]);
+
+  const raagOptions = Array.from(
+    new Set(
+      recordings
+        .map((recording) => recording.raag.trim())
+        .filter((raag) => raag.length > 0)
+    )
+  ).sort((left, right) => left.localeCompare(right));
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const filtered = recordings.filter((recording) => {
+    const matchesSearch = normalizedSearch
+      ? [recording.title, recording.raag, recording.taal ?? "", recording.notes ?? ""].some(
+          (value) => value.toLowerCase().includes(normalizedSearch)
+        )
+      : true;
+    const matchesRaag = raagFilter ? recording.raag === raagFilter : true;
     return matchesSearch && matchesRaag;
   });
 
@@ -64,6 +94,7 @@ export default function RecordingLibrary() {
   const handleOpenAdd = () => {
     setFormMode("add");
     setEditTarget(undefined);
+    setSubmitError(null);
     setFormOpen(true);
   };
 
@@ -71,65 +102,79 @@ export default function RecordingLibrary() {
     setDetailOpen(false);
     setFormMode("edit");
     setEditTarget(recording);
+    setSubmitError(null);
     setFormOpen(true);
   };
 
-  const handleSave = (values: {
-    title: string;
-    raag: string;
-    taal: string;
-    notes: string;
-    fileName: string;
-  }) => {
-    if (formMode === "add") {
-      const newRec: Recording = {
-        id: Date.now(),
-        title: values.title,
-        raag: values.raag,
-        taal: values.taal || undefined,
-        notes: values.notes,
-        assignedStudentIds: [],
-        teacherId: currentTeacher.id,
-        duration: "00:00",
-        date: new Date().toISOString().split("T")[0],
-      };
-      setRecordings((prev) => [newRec, ...prev]);
-    } else if (editTarget) {
-      setRecordings((prev) =>
-        prev.map((r) =>
-          r.id === editTarget.id
-            ? {
-                ...r,
-                title: values.title,
-                raag: values.raag,
-                taal: values.taal || undefined,
-                notes: values.notes,
-              }
-            : r
-        )
-      );
-      // Refresh detail panel if open
-      if (detailOpen && selectedRecording?.id === editTarget.id) {
-        setSelectedRecording((prev) =>
-          prev
-            ? { ...prev, title: values.title, raag: values.raag, taal: values.taal || undefined, notes: values.notes }
-            : prev
-        );
-      }
+  const handleCloseForm = () => {
+    if (isSaving) {
+      return;
     }
+
     setFormOpen(false);
+    setEditTarget(undefined);
+    setSubmitError(null);
   };
 
-  const handleDeleteConfirm = () => {
-    if (!deleteTarget) return;
-    if (detailOpen && selectedRecording?.id === deleteTarget.id) setDetailOpen(false);
-    setRecordings((prev) => prev.filter((r) => r.id !== deleteTarget.id));
-    setDeleteTarget(undefined);
+  const handleSave = async (values: RecordingFormValues) => {
+    setIsSaving(true);
+    setSubmitError(null);
+
+    try {
+      if (formMode === "add") {
+        if (!values.file) {
+          setSubmitError("Audio file is required.");
+          return;
+        }
+
+        const createdRecording = await adminRecordingsApi.create({
+          title: values.title.trim(),
+          raag: values.raag.trim(),
+          taal: values.taal.trim() || "",
+          notes: values.notes.trim() || "",
+          mimeType: values.file.type || "application/octet-stream",
+          file: values.file,
+        });
+
+        setRecordings((current) => [createdRecording, ...current]);
+        setSelectedRecording(createdRecording);
+      } else if (editTarget) {
+        const updatedRecording = await adminRecordingsApi.update(editTarget.id, {
+          title: values.title.trim(),
+          raag: values.raag.trim(),
+          taal: values.taal.trim() ? values.taal.trim() : null,
+          notes: values.notes.trim() ? values.notes.trim() : null,
+        });
+
+        setRecordings((current) =>
+          current.map((recording) =>
+            recording.id === updatedRecording.id ? updatedRecording : recording
+          )
+        );
+        setSelectedRecording((current) =>
+          current?.id === updatedRecording.id ? updatedRecording : current
+        );
+        setEditTarget(updatedRecording);
+      }
+
+      setFormOpen(false);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setSubmitError(
+        toErrorMessage(
+          apiError,
+          formMode === "add"
+            ? "Failed to upload recording."
+            : "Failed to update recording."
+        )
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <Box>
-      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -145,7 +190,7 @@ export default function RecordingLibrary() {
             Recording Management
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Manage all uploaded recordings
+            Manage all uploaded recordings from your organization
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<UploadIcon />} onClick={handleOpenAdd}>
@@ -153,13 +198,12 @@ export default function RecordingLibrary() {
         </Button>
       </Box>
 
-      {/* Search + Raag filter */}
       <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
         <TextField
           placeholder="Search recordings..."
           size="small"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           sx={{ flex: 1, minWidth: 200, maxWidth: 360 }}
           InputProps={{
             startAdornment: (
@@ -174,7 +218,7 @@ export default function RecordingLibrary() {
           <Select
             value={raagFilter}
             label="Raag"
-            onChange={(e) => setRaagFilter(e.target.value)}
+            onChange={(event) => setRaagFilter(event.target.value)}
           >
             <MenuItem value="">All</MenuItem>
             {raagOptions.map((raag) => (
@@ -186,50 +230,66 @@ export default function RecordingLibrary() {
         </FormControl>
       </Box>
 
-      {/* Card grid */}
-      {filtered.length === 0 ? (
-        <Typography variant="body2" color="text.secondary">
-          No recordings found.
-        </Typography>
+      {isLoading ? (
+        <Box sx={{ py: 8, textAlign: "center" }}>
+          <CircularProgress size={28} />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Loading recordings...
+          </Typography>
+        </Box>
+      ) : error ? (
+        <Stack spacing={1.5} sx={{ py: 6, px: 3, textAlign: "center" }}>
+          <Typography variant="body2" fontWeight={600}>
+            Unable to load recordings
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {error.message}
+          </Typography>
+          <Box sx={{ pt: 0.5 }}>
+            <Button variant="outlined" onClick={() => void loadRecordings()}>
+              Retry
+            </Button>
+          </Box>
+        </Stack>
+      ) : recordings.length === 0 ? (
+        <Alert severity="info">
+          No recordings have been uploaded yet.
+        </Alert>
+      ) : filtered.length === 0 ? (
+        <Alert severity="info">
+          No recordings match your current search or raag filter.
+        </Alert>
       ) : (
         <Grid container spacing={3}>
-          {filtered.map((rec) => (
-            <Grid item xs={12} sm={6} lg={4} key={rec.id}>
+          {filtered.map((recording) => (
+            <Grid item xs={12} sm={6} lg={4} key={recording.id}>
               <RecordingCard
-                recording={rec}
+                recording={recording}
                 onView={handleView}
                 onEdit={handleOpenEdit}
-                onDelete={setDeleteTarget}
               />
             </Grid>
           ))}
         </Grid>
       )}
 
-      {/* Detail slide-over */}
       <RecordingDetailDrawer
         open={detailOpen}
         recording={selectedRecording}
-        allStudents={students}
         onClose={() => setDetailOpen(false)}
         onEdit={handleOpenEdit}
       />
 
-      {/* Upload / Edit dialog */}
       <RecordingFormDialog
         open={formOpen}
         mode={formMode}
         recording={editTarget}
-        onClose={() => setFormOpen(false)}
-        onSave={handleSave}
-      />
-
-      {/* Delete confirmation */}
-      <DeleteRecordingDialog
-        open={!!deleteTarget}
-        recordingTitle={deleteTarget?.title ?? ""}
-        onClose={() => setDeleteTarget(undefined)}
-        onConfirm={handleDeleteConfirm}
+        isSaving={isSaving}
+        submitError={submitError}
+        onClose={handleCloseForm}
+        onSave={(values) => {
+          void handleSave(values);
+        }}
       />
     </Box>
   );

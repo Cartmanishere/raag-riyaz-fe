@@ -1,6 +1,9 @@
 # Title
 Recordings List Integration
 
+## Status
+Done
+
 ## Scope
 - Back the recordings library with `GET /admin/recordings`.
 - Remove seed-backed recordings list state.

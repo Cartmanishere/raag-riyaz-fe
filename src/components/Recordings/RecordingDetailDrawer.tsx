@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Avatar,
   Box,
   Button,
   Chip,
@@ -12,32 +11,22 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
-import { Recording, Student } from "@/data/seed";
+import { Recording } from "@/types";
 
 interface RecordingDetailDrawerProps {
   open: boolean;
   recording?: Recording;
-  allStudents: Student[];
   onClose: () => void;
   onEdit: (recording: Recording) => void;
-}
-
-function getInitials(name: string) {
-  return name.split(" ").map((n) => n[0]).join("").toUpperCase();
 }
 
 export default function RecordingDetailDrawer({
   open,
   recording,
-  allStudents,
   onClose,
   onEdit,
 }: RecordingDetailDrawerProps) {
   if (!recording) return null;
-
-  const assignedStudents = allStudents.filter((s) =>
-    recording.assignedStudentIds.includes(s.id)
-  );
 
   return (
     <Drawer
@@ -77,17 +66,6 @@ export default function RecordingDetailDrawer({
       </Box>
 
       <Box sx={{ px: 3, py: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-        {/* Audio player */}
-        <Box>
-          <audio
-            controls
-            style={{ width: "100%", borderRadius: 8 }}
-            aria-label="Recording audio preview"
-          />
-        </Box>
-
-        <Divider />
-
         {/* Details */}
         <Box>
           <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -116,58 +94,27 @@ export default function RecordingDetailDrawer({
 
         <Divider />
 
-        {/* Assigned students */}
-        <Box>
-          <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5 }}>
-            Students with access ({assignedStudents.length})
-          </Typography>
-
-          {assignedStudents.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No students assigned.
+        <Box sx={{ display: "grid", gap: 1.5 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Recording ID
             </Typography>
-          ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {assignedStudents.map((student) => (
-                <Box
-                  key={student.id}
-                  sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
-                >
-                  <Avatar
-                    sx={{
-                      bgcolor: "primary.main",
-                      color: "primary.contrastText",
-                      width: 32,
-                      height: 32,
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {getInitials(student.name)}
-                  </Avatar>
-                  <Typography variant="body2" sx={{ flex: 1 }}>
-                    {student.name}
-                  </Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Box
-                      sx={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: "50%",
-                        bgcolor: student.status === "Active" ? "success.main" : "text.disabled",
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      color={student.status === "Active" ? "success.main" : "text.disabled"}
-                    >
-                      {student.status}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-          )}
+            <Typography variant="body2">{recording.id}</Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              MIME type
+            </Typography>
+            <Typography variant="body2">{recording.mimeType}</Typography>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Storage object key
+            </Typography>
+            <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
+              {recording.objectKey}
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Drawer>

@@ -10,23 +10,19 @@ import {
   Typography,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
-import PeopleIcon from "@mui/icons-material/People";
-import { Recording } from "@/data/seed";
+import { Recording } from "@/types";
 
 interface RecordingCardProps {
   recording: Recording;
   onView: (recording: Recording) => void;
   onEdit: (recording: Recording) => void;
-  onDelete: (recording: Recording) => void;
 }
 
 export default function RecordingCard({
   recording,
   onView,
   onEdit,
-  onDelete,
 }: RecordingCardProps) {
   return (
     <Card
@@ -68,12 +64,15 @@ export default function RecordingCard({
             Taal: {recording.taal ?? "—"}
           </Typography>
 
-          {/* Student count */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <PeopleIcon sx={{ fontSize: 14, color: "text.disabled" }} />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+            <Chip
+              label={recording.mimeType}
+              size="small"
+              variant="outlined"
+              sx={{ height: 22, fontSize: 11 }}
+            />
             <Typography variant="caption" color="text.secondary">
-              {recording.assignedStudentIds.length}{" "}
-              {recording.assignedStudentIds.length === 1 ? "student" : "students"}
+              ID: {recording.id}
             </Typography>
           </Box>
         </CardContent>
@@ -96,13 +95,6 @@ export default function RecordingCard({
           aria-label="edit recording"
         >
           <EditIcon fontSize="small" />
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={(e) => { e.stopPropagation(); onDelete(recording); }}
-          aria-label="delete recording"
-        >
-          <DeleteIcon fontSize="small" />
         </IconButton>
       </Box>
     </Card>

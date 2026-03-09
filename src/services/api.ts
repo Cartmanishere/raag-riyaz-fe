@@ -411,8 +411,8 @@ export const adminRecordingsApi = {
       data: buildFormData({
         title: payload.title,
         raag: payload.raag,
-        taal: toNullableField(payload.taal),
-        notes: toNullableField(payload.notes),
+        taal: payload.taal ?? "",
+        notes: payload.notes ?? "",
         mime_type: payload.mimeType,
         file: payload.file,
       }),
