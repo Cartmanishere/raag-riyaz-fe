@@ -1,32 +1,30 @@
 "use client";
 
-import { Avatar, Box, IconButton, Typography } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { Student } from "@/data/seed";
+import { Avatar, Box, Typography } from "@mui/material";
+import { deriveActorDisplayName, deriveActorInitials } from "@/services/auth-session";
+import { User } from "@/types";
 
 interface StudentRowProps {
-  student: Student;
-  onEdit: (student: Student) => void;
-  onDelete: (student: Student) => void;
-  onView: (id: number) => void;
+  student: User;
 }
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
+function getStatusColor(status: string) {
+  return status.toLowerCase() === "active" ? "success.main" : "text.disabled";
 }
 
-export default function StudentRow({
-  student,
-  onEdit,
-  onDelete,
-  onView,
-}: StudentRowProps) {
+function formatStatus(status: string) {
+  if (!status.trim()) {
+    return "Unknown";
+  }
+
+  return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+}
+
+export default function StudentRow({ student }: StudentRowProps) {
+  const displayName = deriveActorDisplayName(student);
+  const initials = deriveActorInitials(student);
+  const statusColor = getStatusColor(student.status);
+
   return (
     <Box
       sx={{
@@ -38,11 +36,8 @@ export default function StudentRow({
         borderBottom: "1px solid",
         borderColor: "divider",
         "&:last-child": { borderBottom: "none" },
-        "&:hover": { backgroundColor: "action.hover", cursor: "pointer" },
       }}
-      onClick={() => onView(student.id)}
     >
-      {/* Avatar */}
       <Avatar
         sx={{
           bgcolor: "primary.main",
@@ -54,20 +49,19 @@ export default function StudentRow({
           flexShrink: 0,
         }}
       >
-        {getInitials(student.name)}
+        {initials}
       </Avatar>
 
-      {/* Name */}
-      <Typography
-        variant="body2"
-        fontWeight={600}
-        sx={{ flex: 1, minWidth: 0 }}
-        noWrap
-      >
-        {student.name}
-      </Typography>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="body2" fontWeight={600} noWrap>
+          {displayName}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" noWrap>
+          {student.email}
+          {student.phone ? ` • ${student.phone}` : ""}
+        </Typography>
+      </Box>
 
-      {/* Status dot + text */}
       <Box
         sx={{
           display: "flex",
@@ -81,51 +75,17 @@ export default function StudentRow({
             width: 8,
             height: 8,
             borderRadius: "50%",
-            bgcolor: student.status === "Active" ? "success.main" : "text.disabled",
+            bgcolor: statusColor,
           }}
         />
         <Typography
           variant="caption"
-          color={student.status === "Active" ? "success.main" : "text.disabled"}
+          color={statusColor}
           fontWeight={500}
-          sx={{ minWidth: 52 }}
+          sx={{ minWidth: 52, textTransform: "capitalize" }}
         >
-          {student.status}
+          {formatStatus(student.status)}
         </Typography>
-      </Box>
-
-      {/* Level */}
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ flexShrink: 0, minWidth: 80 }}
-      >
-        {student.level}
-      </Typography>
-
-      {/* Actions */}
-      <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(student);
-          }}
-          aria-label="edit student"
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(student);
-          }}
-          aria-label="delete student"
-        >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-        <ChevronRightIcon sx={{ color: "text.disabled", fontSize: 20 }} />
       </Box>
     </Box>
   );

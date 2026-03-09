@@ -1,97 +1,65 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
+  CircularProgress,
   InputAdornment,
   Paper,
+  Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
-import { Student, students as seedStudents, teachers } from "@/data/seed";
+import { adminUsersApi } from "@/services/api";
+import { ApiError, User } from "@/types";
 import StudentRow from "./StudentRow";
-import StudentFormDrawer from "./StudentFormDrawer";
-import DeleteConfirmDialog from "./DeleteConfirmDialog";
 
-const currentTeacher = teachers[0];
-
-type DrawerMode = "add" | "edit";
+const ADMIN_ROLE = "admin";
 
 export default function StudentList() {
-  const router = useRouter();
-
-  const [students, setStudents] = React.useState<Student[]>(
-    seedStudents.filter((s) => s.teacherId === currentTeacher.id)
-  );
+  const [students, setStudents] = React.useState<User[]>([]);
   const [search, setSearch] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<ApiError | null>(null);
 
-  // Drawer state
-  const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const [drawerMode, setDrawerMode] = React.useState<DrawerMode>("add");
-  const [selectedStudent, setSelectedStudent] = React.useState<Student | undefined>();
+  const loadStudents = React.useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-  // Delete dialog state
-  const [deleteTarget, setDeleteTarget] = React.useState<Student | undefined>();
-
-  const filtered = students.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleAdd = () => {
-    setDrawerMode("add");
-    setSelectedStudent(undefined);
-    setDrawerOpen(true);
-  };
-
-  const handleEdit = (student: Student) => {
-    setDrawerMode("edit");
-    setSelectedStudent(student);
-    setDrawerOpen(true);
-  };
-
-  const handleDeleteRequest = (student: Student) => {
-    setDeleteTarget(student);
-  };
-
-  const handleDeleteConfirm = () => {
-    if (!deleteTarget) return;
-    setStudents((prev) => prev.filter((s) => s.id !== deleteTarget.id));
-    setDeleteTarget(undefined);
-  };
-
-  const handleSave = (values: {
-    name: string;
-    email: string;
-    status: "Active" | "Inactive";
-    level: "Beginner" | "Intermediate" | "Advanced";
-  }) => {
-    if (drawerMode === "add") {
-      const newStudent: Student = {
-        id: Date.now(),
-        username: values.name.toLowerCase().replace(/\s+/g, ""),
-        password: "student123",
-        instrument: "",
-        teacherId: currentTeacher.id,
-        joinDate: new Date().toISOString().split("T")[0],
-        progress: 0,
-        ...values,
-      };
-      setStudents((prev) => [...prev, newStudent]);
-    } else if (selectedStudent) {
-      setStudents((prev) =>
-        prev.map((s) => (s.id === selectedStudent.id ? { ...s, ...values } : s))
-      );
+    try {
+      const users = await adminUsersApi.list();
+      setStudents(users.filter((user) => user.role !== ADMIN_ROLE));
+    } catch (err) {
+      const apiError = err as ApiError;
+      setError({
+        code: apiError?.code,
+        message: apiError?.message ?? "Failed to load students.",
+        statusCode: apiError?.statusCode ?? 500,
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setDrawerOpen(false);
-  };
+  }, []);
+
+  React.useEffect(() => {
+    void loadStudents();
+  }, [loadStudents]);
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const filtered = students.filter((student) => {
+    if (!normalizedSearch) {
+      return true;
+    }
+
+    return [student.displayName ?? "", student.email, student.phone ?? ""].some(
+      (value) => value.toLowerCase().includes(normalizedSearch)
+    );
+  });
 
   return (
     <Box>
-      {/* Page header */}
       <Box
         sx={{
           display: "flex",
@@ -107,21 +75,13 @@ export default function StudentList() {
             Students Management
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Manage all students
+            Browse organization users with admin accounts excluded
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-        >
-          Add Student
-        </Button>
       </Box>
 
-      {/* Search bar */}
       <TextField
-        placeholder="Search by name..."
+        placeholder="Search by name, email, or phone..."
         size="small"
         fullWidth
         value={search}
@@ -136,43 +96,46 @@ export default function StudentList() {
         }}
       />
 
-      {/* Student list */}
       <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
-        {filtered.length === 0 ? (
+        {isLoading ? (
           <Box sx={{ py: 6, textAlign: "center" }}>
+            <CircularProgress size={28} />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Loading students...
+            </Typography>
+          </Box>
+        ) : error ? (
+          <Stack spacing={1} sx={{ py: 6, px: 3, textAlign: "center" }}>
+            <Typography variant="body2" fontWeight={600}>
+              Unable to load students
+            </Typography>
             <Typography variant="body2" color="text.secondary">
-              No students found.
+              {error.message}
+            </Typography>
+            <Box sx={{ pt: 1 }}>
+              <Button variant="outlined" onClick={() => void loadStudents()}>
+                Retry
+              </Button>
+            </Box>
+          </Stack>
+        ) : students.length === 0 ? (
+          <Box sx={{ py: 6, textAlign: "center", px: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              No non-admin users were found for this organization.
+            </Typography>
+          </Box>
+        ) : filtered.length === 0 ? (
+          <Box sx={{ py: 6, textAlign: "center", px: 3 }}>
+            <Typography variant="body2" color="text.secondary">
+              No students match your current search.
             </Typography>
           </Box>
         ) : (
           filtered.map((student) => (
-            <StudentRow
-              key={student.id}
-              student={student}
-              onEdit={handleEdit}
-              onDelete={handleDeleteRequest}
-              onView={(id) => router.push(`/teacher-dashboard/students/${id}`)}
-            />
+            <StudentRow key={student.id} student={student} />
           ))
         )}
       </Paper>
-
-      {/* Add / Edit drawer */}
-      <StudentFormDrawer
-        open={drawerOpen}
-        mode={drawerMode}
-        student={selectedStudent}
-        onClose={() => setDrawerOpen(false)}
-        onSave={handleSave}
-      />
-
-      {/* Delete confirmation */}
-      <DeleteConfirmDialog
-        open={!!deleteTarget}
-        studentName={deleteTarget?.name ?? ""}
-        onClose={() => setDeleteTarget(undefined)}
-        onConfirm={handleDeleteConfirm}
-      />
     </Box>
   );
 }

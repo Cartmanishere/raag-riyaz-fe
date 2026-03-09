@@ -1,6 +1,9 @@
 # Title
 Students List Integration
 
+## Status
+Done
+
 ## Scope
 - Back the Students Management screen with `/admin/users`.
 - Replace seed-backed students list state.
