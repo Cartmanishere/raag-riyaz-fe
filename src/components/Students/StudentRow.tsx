@@ -1,11 +1,14 @@
 "use client";
 
-import { Avatar, Box, Typography } from "@mui/material";
+import Link from "next/link";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import { Avatar, Box, IconButton, Typography } from "@mui/material";
 import { deriveActorDisplayName, deriveActorInitials } from "@/services/auth-session";
 import { User } from "@/types";
 
 interface StudentRowProps {
   student: User;
+  onEdit: (student: User) => void;
 }
 
 function getStatusColor(status: string) {
@@ -20,7 +23,7 @@ function formatStatus(status: string) {
   return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 }
 
-export default function StudentRow({ student }: StudentRowProps) {
+export default function StudentRow({ student, onEdit }: StudentRowProps) {
   const displayName = deriveActorDisplayName(student);
   const initials = deriveActorInitials(student);
   const statusColor = getStatusColor(student.status);
@@ -53,7 +56,18 @@ export default function StudentRow({ student }: StudentRowProps) {
       </Avatar>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={600} noWrap>
+        <Typography
+          component={Link}
+          href={`/teacher-dashboard/students/${student.id}`}
+          variant="body2"
+          fontWeight={600}
+          noWrap
+          sx={{
+            color: "text.primary",
+            textDecoration: "none",
+            "&:hover": { color: "primary.main" },
+          }}
+        >
           {displayName}
         </Typography>
         <Typography variant="caption" color="text.secondary" noWrap>
@@ -66,26 +80,36 @@ export default function StudentRow({ student }: StudentRowProps) {
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 0.75,
+          gap: 1,
           flexShrink: 0,
         }}
       >
-        <Box
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            bgcolor: statusColor,
-          }}
-        />
-        <Typography
-          variant="caption"
-          color={statusColor}
-          fontWeight={500}
-          sx={{ minWidth: 52, textTransform: "capitalize" }}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+          <Box
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              bgcolor: statusColor,
+            }}
+          />
+          <Typography
+            variant="caption"
+            color={statusColor}
+            fontWeight={500}
+            sx={{ minWidth: 52, textTransform: "capitalize" }}
+          >
+            {formatStatus(student.status)}
+          </Typography>
+        </Box>
+
+        <IconButton
+          size="small"
+          aria-label={`Edit ${displayName}`}
+          onClick={() => onEdit(student)}
         >
-          {formatStatus(student.status)}
-        </Typography>
+          <EditOutlinedIcon fontSize="small" />
+        </IconButton>
       </Box>
     </Box>
   );

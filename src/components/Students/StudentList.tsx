@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
   Button,
@@ -11,18 +13,28 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import { adminUsersApi } from "@/services/api";
 import { ApiError, User } from "@/types";
+import StudentFormDrawer, { StudentFormValues } from "./StudentFormDrawer";
 import StudentRow from "./StudentRow";
 
 const ADMIN_ROLE = "admin";
+const USER_ROLE = "user";
+
+function toErrorMessage(error: ApiError | null, fallback: string) {
+  return error?.message ?? fallback;
+}
 
 export default function StudentList() {
   const [students, setStudents] = React.useState<User[]>([]);
   const [search, setSearch] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<ApiError | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
+  const [drawerMode, setDrawerMode] = React.useState<"add" | "edit">("add");
+  const [selectedStudent, setSelectedStudent] = React.useState<User | undefined>();
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
 
   const loadStudents = React.useCallback(async () => {
     setIsLoading(true);
@@ -46,6 +58,81 @@ export default function StudentList() {
   React.useEffect(() => {
     void loadStudents();
   }, [loadStudents]);
+
+  const handleOpenAdd = () => {
+    setDrawerMode("add");
+    setSelectedStudent(undefined);
+    setSubmitError(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleOpenEdit = (student: User) => {
+    setDrawerMode("edit");
+    setSelectedStudent(student);
+    setSubmitError(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsDrawerOpen(false);
+    setSelectedStudent(undefined);
+    setSubmitError(null);
+  };
+
+  const handleSave = async (values: StudentFormValues) => {
+    setIsSaving(true);
+    setSubmitError(null);
+
+    try {
+      if (drawerMode === "add") {
+        const createdStudent = await adminUsersApi.create({
+          email: values.email,
+          password: values.password,
+          status: values.status,
+          role: USER_ROLE,
+          displayName: values.displayName,
+          phone: values.phone || null,
+        });
+
+        setStudents((current) => [createdStudent, ...current]);
+      } else if (selectedStudent) {
+        const updatedStudent = await adminUsersApi.update(selectedStudent.id, {
+          email: values.email,
+          status: values.status,
+          role: selectedStudent.role || USER_ROLE,
+          displayName: values.displayName,
+          phone: values.phone || null,
+          ...(values.password ? { password: values.password } : {}),
+        });
+
+        setStudents((current) =>
+          current.map((student) =>
+            student.id === updatedStudent.id ? updatedStudent : student
+          )
+        );
+        setSelectedStudent(updatedStudent);
+      }
+
+      setIsDrawerOpen(false);
+      setSubmitError(null);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setSubmitError(
+        toErrorMessage(
+          apiError,
+          drawerMode === "add"
+            ? "Failed to create student."
+            : "Failed to update student."
+        )
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const normalizedSearch = search.trim().toLowerCase();
   const filtered = students.filter((student) => {
@@ -78,6 +165,10 @@ export default function StudentList() {
             Browse organization users with admin accounts excluded
           </Typography>
         </Box>
+
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>
+          Add Student
+        </Button>
       </Box>
 
       <TextField
@@ -85,7 +176,7 @@ export default function StudentList() {
         size="small"
         fullWidth
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(event) => setSearch(event.target.value)}
         sx={{ mb: 2, maxWidth: 400 }}
         InputProps={{
           startAdornment: (
@@ -132,10 +223,26 @@ export default function StudentList() {
           </Box>
         ) : (
           filtered.map((student) => (
-            <StudentRow key={student.id} student={student} />
+            <StudentRow
+              key={student.id}
+              student={student}
+              onEdit={handleOpenEdit}
+            />
           ))
         )}
       </Paper>
+
+      <StudentFormDrawer
+        open={isDrawerOpen}
+        mode={drawerMode}
+        student={selectedStudent}
+        isSaving={isSaving}
+        submitError={submitError}
+        onClose={handleCloseDrawer}
+        onSave={(values) => {
+          void handleSave(values);
+        }}
+      />
     </Box>
   );
 }

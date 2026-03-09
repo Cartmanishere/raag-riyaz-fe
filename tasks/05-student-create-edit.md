@@ -1,6 +1,9 @@
 # Title
 Student Create And Edit
 
+## Status
+Done
+
 ## Scope
 - Wire the add/edit student drawer to backend user creation and update endpoints.
 - Align the form with supported backend user fields.

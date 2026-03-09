@@ -1,6 +1,9 @@
 # Title
 Student Detail Page
 
+## Status
+Done
+
 ## Scope
 - Replace the seed-based student detail lookup with backend user detail.
 - Reduce or remove unsupported recording-history assumptions from the page.
