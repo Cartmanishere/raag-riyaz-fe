@@ -23,7 +23,7 @@ import { deriveActorDisplayName } from "@/services/auth-session";
 import { adminRecordingsApi, adminUsersApi } from "@/services/api";
 import { ApiError, PlaybackInfo, Recording, User } from "@/types";
 
-const ADMIN_ROLE = "admin";
+const USER_ROLE = "user";
 
 function toErrorMessage(error: ApiError | null, fallback: string) {
   return error?.message ?? fallback;
@@ -132,7 +132,7 @@ export default function RecordingDetailDrawer({
       }
 
       const eligibleUsers = sortUsers(
-        users.filter((user) => user.role.toLowerCase() !== ADMIN_ROLE)
+        users.filter((user) => user.role.toLowerCase() === USER_ROLE)
       );
       setAssignees(eligibleUsers);
       setSelectedAssigneeId((current) =>
@@ -364,7 +364,7 @@ export default function RecordingDetailDrawer({
             </Stack>
           ) : assignees.length === 0 ? (
             <Alert severity="info">
-              No eligible non-admin users are available for assignment.
+              No student accounts are available for assignment.
             </Alert>
           ) : (
             <Stack spacing={1.5}>

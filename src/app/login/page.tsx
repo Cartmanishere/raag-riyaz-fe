@@ -12,7 +12,6 @@ import {
   Divider,
   IconButton,
   InputAdornment,
-  Link,
   TextField,
   Typography,
 } from "@mui/material";
@@ -125,16 +124,9 @@ export default function LoginPage() {
               }}
             />
 
-            <Box sx={{ textAlign: "right", mb: 3 }}>
-              <Link
-                href="/forgot-password"
-                underline="hover"
-                variant="body2"
-                sx={{ color: "primary.main", cursor: "pointer" }}
-              >
-                Forgot password?
-              </Link>
-            </Box>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 3 }}>
+              Password reset is not available in this frontend yet.
+            </Typography>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 

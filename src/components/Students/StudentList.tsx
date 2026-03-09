@@ -18,7 +18,6 @@ import { ApiError, User } from "@/types";
 import StudentFormDrawer, { StudentFormValues } from "./StudentFormDrawer";
 import StudentRow from "./StudentRow";
 
-const ADMIN_ROLE = "admin";
 const USER_ROLE = "user";
 
 function toErrorMessage(error: ApiError | null, fallback: string) {
@@ -42,7 +41,7 @@ export default function StudentList() {
 
     try {
       const users = await adminUsersApi.list();
-      setStudents(users.filter((user) => user.role !== ADMIN_ROLE));
+      setStudents(users.filter((user) => user.role.toLowerCase() === USER_ROLE));
     } catch (err) {
       const apiError = err as ApiError;
       setError({
@@ -162,7 +161,7 @@ export default function StudentList() {
             Students Management
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Browse organization users with admin accounts excluded
+            Browse backend user accounts for this organization
           </Typography>
         </Box>
 
@@ -212,7 +211,7 @@ export default function StudentList() {
         ) : students.length === 0 ? (
           <Box sx={{ py: 6, textAlign: "center", px: 3 }}>
             <Typography variant="body2" color="text.secondary">
-              No non-admin users were found for this organization.
+              No student accounts were found for this organization.
             </Typography>
           </Box>
         ) : filtered.length === 0 ? (

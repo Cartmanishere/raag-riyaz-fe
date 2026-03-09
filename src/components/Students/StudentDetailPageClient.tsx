@@ -34,6 +34,10 @@ function isNotFoundError(error: ApiError | null) {
   return error?.statusCode === 404;
 }
 
+function isStudentUser(user: User) {
+  return user.role.toLowerCase() === USER_ROLE;
+}
+
 interface StudentDetailPageClientProps {
   id: string;
 }
@@ -64,6 +68,15 @@ export default function StudentDetailPageClient({
 
     try {
       const nextStudent = await adminUsersApi.getById(id);
+      if (!isStudentUser(nextStudent)) {
+        setStudent(null);
+        setError({
+          message: "The requested account is not a student.",
+          statusCode: 404,
+        });
+        return;
+      }
+
       setStudent(nextStudent);
     } catch (err) {
       const apiError = err as ApiError;

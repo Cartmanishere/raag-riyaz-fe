@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Box, CircularProgress } from "@mui/material";
 import { AuthActor, AuthSession } from "@/types";
 import {
+  clearSessionSnapshot,
   deriveActorDisplayName,
   deriveActorInitials,
   getSessionSnapshot,
@@ -96,6 +97,7 @@ export default function AuthProvider({
           return;
         }
 
+        clearSessionSnapshot();
         setStatus("unauthenticated");
       } finally {
         if (active) {
