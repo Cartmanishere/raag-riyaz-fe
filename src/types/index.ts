@@ -82,6 +82,14 @@ export interface AssignedRecordingDto {
   assigned_at: string;
 }
 
+export interface AdminUserRecordingAssignmentDto {
+  assignment_id: string;
+  assigned_to_user_id: string;
+  assigned_by_admin_id: string;
+  assigned_at: string;
+  recording: Omit<RecordingDto, "object_key">;
+}
+
 export interface NoteImageDto {
   id: string;
   org_id: string;
@@ -161,6 +169,14 @@ export interface AssignedRecording {
   notes: string | null;
   mimeType: string;
   assignedAt: string;
+}
+
+export interface AdminUserRecordingAssignment {
+  assignmentId: string;
+  assignedToUserId: string;
+  assignedByAdminId: string;
+  assignedAt: string;
+  recording: Omit<Recording, "objectKey">;
 }
 
 export interface NoteImage {

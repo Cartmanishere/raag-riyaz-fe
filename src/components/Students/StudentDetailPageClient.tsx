@@ -12,13 +12,14 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Divider,
   Stack,
   Typography,
 } from "@mui/material";
 import StudentFormDrawer, { StudentFormValues } from "@/components/Students/StudentFormDrawer";
 import { deriveActorDisplayName, deriveActorInitials } from "@/services/auth-session";
 import { adminUsersApi } from "@/services/api";
-import { ApiError, User } from "@/types";
+import { AdminUserRecordingAssignment, ApiError, User } from "@/types";
 
 const USER_ROLE = "user";
 
@@ -38,6 +39,19 @@ function isStudentUser(user: User) {
   return user.role.toLowerCase() === USER_ROLE;
 }
 
+function formatAssignedAt(value: string) {
+  const assignedAt = new Date(value);
+
+  if (Number.isNaN(assignedAt.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(assignedAt);
+}
+
 interface StudentDetailPageClientProps {
   id: string;
 }
@@ -51,6 +65,11 @@ export default function StudentDetailPageClient({
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [assignedRecordings, setAssignedRecordings] = React.useState<
+    AdminUserRecordingAssignment[]
+  >([]);
+  const [areRecordingsLoading, setAreRecordingsLoading] = React.useState(true);
+  const [recordingsError, setRecordingsError] = React.useState<ApiError | null>(null);
 
   const loadStudent = React.useCallback(async () => {
     if (!id.trim()) {
@@ -94,6 +113,40 @@ export default function StudentDetailPageClient({
   React.useEffect(() => {
     void loadStudent();
   }, [loadStudent]);
+
+  const loadAssignedRecordings = React.useCallback(async () => {
+    if (!id.trim()) {
+      setAssignedRecordings([]);
+      setRecordingsError({
+        message: "Invalid student ID.",
+        statusCode: 404,
+      });
+      setAreRecordingsLoading(false);
+      return;
+    }
+
+    setAreRecordingsLoading(true);
+    setRecordingsError(null);
+
+    try {
+      const nextAssignedRecordings = await adminUsersApi.listRecordings(id);
+      setAssignedRecordings(nextAssignedRecordings);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setAssignedRecordings([]);
+      setRecordingsError({
+        code: apiError?.code,
+        message: apiError?.message ?? "Failed to load assigned recordings.",
+        statusCode: apiError?.statusCode ?? 500,
+      });
+    } finally {
+      setAreRecordingsLoading(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    void loadAssignedRecordings();
+  }, [loadAssignedRecordings]);
 
   const handleSave = async (values: StudentFormValues) => {
     if (!student) {
@@ -285,10 +338,55 @@ export default function StudentDetailPageClient({
           <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
             Recordings
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Recording assignments are not shown on this page yet because the current
-            backend user detail does not provide reliable assignment history.
-          </Typography>
+          {areRecordingsLoading ? (
+            <Box sx={{ py: 4, textAlign: "center" }}>
+              <CircularProgress size={24} />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                Loading assigned recordings...
+              </Typography>
+            </Box>
+          ) : recordingsError ? (
+            <Stack spacing={1.5} sx={{ pt: 1 }}>
+              <Alert severity="error">{recordingsError.message}</Alert>
+              <Box>
+                <Button variant="outlined" onClick={() => void loadAssignedRecordings()}>
+                  Retry
+                </Button>
+              </Box>
+            </Stack>
+          ) : assignedRecordings.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No recordings have been assigned to this student yet.
+            </Typography>
+          ) : (
+            <Stack divider={<Divider flexItem />} spacing={2} sx={{ pt: 1 }}>
+              {assignedRecordings.map((assignment) => (
+                <Box key={assignment.assignmentId}>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {assignment.recording.title}
+                  </Typography>
+                  <Stack spacing={0.5} sx={{ mt: 0.75 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Raag: {assignment.recording.raag}
+                    </Typography>
+                    {assignment.recording.taal ? (
+                      <Typography variant="body2" color="text.secondary">
+                        Taal: {assignment.recording.taal}
+                      </Typography>
+                    ) : null}
+                    {assignment.recording.notes ? (
+                      <Typography variant="body2" color="text.secondary">
+                        Notes: {assignment.recording.notes}
+                      </Typography>
+                    ) : null}
+                    <Typography variant="body2" color="text.secondary">
+                      Assigned: {formatAssignedAt(assignment.assignedAt)}
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
+          )}
         </CardContent>
       </Card>
 

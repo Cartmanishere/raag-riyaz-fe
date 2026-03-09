@@ -6,6 +6,8 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import {
+  AdminUserRecordingAssignment,
+  AdminUserRecordingAssignmentDto,
   ApiError,
   ApiErrorPayload,
   AssignedRecording,
@@ -105,6 +107,27 @@ function mapRecording(dto: RecordingDto): Recording {
     createdByAdminId: dto.created_by_admin_id,
     orgId: dto.org_id,
     objectKey: dto.object_key,
+  };
+}
+
+function mapAdminUserRecordingAssignment(
+  dto: AdminUserRecordingAssignmentDto,
+): AdminUserRecordingAssignment {
+  return {
+    assignmentId: dto.assignment_id,
+    assignedToUserId: dto.assigned_to_user_id,
+    assignedByAdminId: dto.assigned_by_admin_id,
+    assignedAt: dto.assigned_at,
+    recording: {
+      id: dto.recording.id,
+      title: dto.recording.title,
+      raag: dto.recording.raag,
+      taal: dto.recording.taal,
+      notes: dto.recording.notes,
+      mimeType: dto.recording.mime_type,
+      createdByAdminId: dto.recording.created_by_admin_id,
+      orgId: dto.recording.org_id,
+    },
   };
 }
 
@@ -348,6 +371,15 @@ export const adminUsersApi = {
     });
 
     return mapUser(response.user);
+  },
+
+  async listRecordings(id: string) {
+    const response = await request<{ recordings: AdminUserRecordingAssignmentDto[] }>({
+      url: `/admin/users/${id}/recordings`,
+      method: "GET",
+    });
+
+    return response.recordings.map(mapAdminUserRecordingAssignment);
   },
 
   async create(payload: CreateUserRequest) {
