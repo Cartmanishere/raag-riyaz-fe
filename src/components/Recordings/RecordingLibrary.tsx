@@ -185,12 +185,9 @@ export default function RecordingLibrary() {
           gap: 2,
         }}
       >
-        <Box>
-          <Typography variant="h4" fontWeight={700}>
+        <Box sx={{ textAlign: "center", flex: 1 }}>
+          <Typography variant="h5" fontWeight={700}>
             Recording Management
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Manage all uploaded recordings from your organization
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<UploadIcon />} onClick={handleOpenAdd}>

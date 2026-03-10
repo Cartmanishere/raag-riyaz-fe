@@ -4,16 +4,16 @@ const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#4b2e2eff",
+      main: "#377dcdff",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#faf8f5",
-      contrastText: "#5a5a5a",
+      main: "#ffffffff",
+      contrastText: "#377dcdff",
     },
     background: {
-      default: "#faf8f5",
-      paper: "#fffdf9",
+      default: "#ffffffff",
+      paper: "#ffffff",
     },
   },
   typography: {

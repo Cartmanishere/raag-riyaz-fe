@@ -62,7 +62,7 @@ export default function ProfilePage() {
 
   return (
     <Box>
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 4 }}>
+      <Typography variant="h4" fontWeight={700} sx={{ mb: 4, textAlign: "center" }}>
         Profile
       </Typography>
 
