@@ -90,11 +90,14 @@ export interface AdminUserRecordingAssignmentDto {
   recording: Omit<RecordingDto, "object_key">;
 }
 
-export interface NoteImageDto {
+export type RecordingAttachmentType = "image" | "pdf";
+
+export interface RecordingAttachmentDto {
   id: string;
   org_id: string;
   recording_id: string;
   uploaded_by_user_id: string;
+  type: RecordingAttachmentType;
   mime_type: string;
   file_size_bytes: number;
   url: string;
@@ -179,11 +182,12 @@ export interface AdminUserRecordingAssignment {
   recording: Omit<Recording, "objectKey">;
 }
 
-export interface NoteImage {
+export interface RecordingAttachment {
   id: string;
   orgId: string;
   recordingId: string;
   uploadedByUserId: string;
+  type: RecordingAttachmentType;
   mimeType: string;
   fileSizeBytes: number;
   url: string;
@@ -259,8 +263,9 @@ export interface CreateAssignmentRequest {
   assignedToUserId: string;
 }
 
-export interface UploadNoteImageRequest {
+export interface UploadRecordingAttachmentRequest {
   file: Blob;
+  type: RecordingAttachmentType;
   mimeType?: string;
 }
 

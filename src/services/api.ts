@@ -28,16 +28,16 @@ import {
   DeleteResult,
   LoginRequest,
   LogoutRequest,
-  NoteImage,
-  NoteImageDto,
   PlaybackInfo,
   PlaybackResponseDto,
+  RecordingAttachment,
+  RecordingAttachmentDto,
   Recording,
   RecordingDto,
   RefreshRequest,
   UpdateRecordingRequest,
   UpdateUserRequest,
-  UploadNoteImageRequest,
+  UploadRecordingAttachmentRequest,
   User,
   UserDto,
 } from "@/types";
@@ -161,12 +161,15 @@ function mapAssignedRecording(dto: AssignedRecordingDto): AssignedRecording {
   };
 }
 
-function mapNoteImage(dto: NoteImageDto): NoteImage {
+function mapRecordingAttachment(
+  dto: RecordingAttachmentDto,
+): RecordingAttachment {
   return {
     id: dto.id,
     orgId: dto.org_id,
     recordingId: dto.recording_id,
     uploadedByUserId: dto.uploaded_by_user_id,
+    type: dto.type,
     mimeType: dto.mime_type,
     fileSizeBytes: dto.file_size_bytes,
     url: dto.url,
@@ -493,20 +496,21 @@ export const adminRecordingsApi = {
     return mapAssignment(response.assignment);
   },
 
-  async listNoteImages(id: string) {
-    const response = await request<{ note_images: NoteImageDto[] }>({
-      url: `/admin/recordings/${id}/note-images`,
+  async listAttachments(id: string) {
+    const response = await request<{ attachments: RecordingAttachmentDto[] }>({
+      url: `/admin/recordings/${id}/attachments`,
       method: "GET",
     });
 
-    return response.note_images.map(mapNoteImage);
+    return response.attachments.map(mapRecordingAttachment);
   },
 
-  async uploadNoteImage(id: string, payload: UploadNoteImageRequest) {
-    const response = await request<{ note_image: NoteImageDto }>({
-      url: `/admin/recordings/${id}/note-images`,
+  async uploadAttachment(id: string, payload: UploadRecordingAttachmentRequest) {
+    const response = await request<{ attachment: RecordingAttachmentDto }>({
+      url: `/admin/recordings/${id}/attachments`,
       method: "POST",
       data: buildFormData({
+        type: payload.type,
         file: payload.file,
         mime_type: payload.mimeType,
       }),
@@ -515,12 +519,15 @@ export const adminRecordingsApi = {
       },
     });
 
-    return mapNoteImage(response.note_image);
+    return mapRecordingAttachment(response.attachment);
   },
 
-  async deleteNoteImage(recordingId: string, imageId: string): Promise<DeleteResult> {
+  async deleteAttachment(
+    recordingId: string,
+    attachmentId: string,
+  ): Promise<DeleteResult> {
     await request<void>({
-      url: `/admin/recordings/${recordingId}/note-images/${imageId}`,
+      url: `/admin/recordings/${recordingId}/attachments/${attachmentId}`,
       method: "DELETE",
     });
 
@@ -583,13 +590,13 @@ export const userRecordingsApi = {
     return mapPlaybackInfo(response);
   },
 
-  async listNoteImages(id: string) {
-    const response = await request<{ note_images: NoteImageDto[] }>({
-      url: `/user/recordings/${id}/note-images`,
+  async listAttachments(id: string) {
+    const response = await request<{ attachments: RecordingAttachmentDto[] }>({
+      url: `/user/recordings/${id}/attachments`,
       method: "GET",
     });
 
-    return response.note_images.map(mapNoteImage);
+    return response.attachments.map(mapRecordingAttachment);
   },
 };
 

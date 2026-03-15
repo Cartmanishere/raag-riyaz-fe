@@ -22,7 +22,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { deriveActorDisplayName } from "@/services/auth-session";
 import { adminRecordingsApi, adminUsersApi } from "@/services/api";
 import { ApiError, PlaybackInfo, Recording, User } from "@/types";
-import NoteImagesSection from "./NoteImagesSection";
+import AttachmentsSection from "./AttachmentsSection";
 
 const USER_ROLE = "user";
 
@@ -405,7 +405,7 @@ export default function RecordingDetailDrawer({
 
         <Divider />
 
-        <NoteImagesSection recordingId={recording.id} open={open} />
+        <AttachmentsSection recordingId={recording.id} open={open} />
 
         <Divider />
 
