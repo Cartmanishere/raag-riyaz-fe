@@ -63,7 +63,7 @@ export default function RecordingFormDialog({
       if (mode === "edit" && recording) {
         setForm({
           title: recording.title,
-          raag: recording.raag,
+          raag: recording.raag ?? "",
           taal: recording.taal ?? "",
           notes: recording.notes ?? "",
           file: null,
@@ -78,7 +78,6 @@ export default function RecordingFormDialog({
   const validate = () => {
     const e: Partial<Record<keyof RecordingFormValues, string>> = {};
     if (!form.title.trim()) e.title = "Title is required";
-    if (!form.raag.trim()) e.raag = "Raag is required";
     if (mode === "add" && !form.file) e.file = "Audio file is required";
     if (form.file && form.file.type && !form.file.type.startsWith("audio/")) {
       e.file = "Selected file must be an audio file";
@@ -128,9 +127,8 @@ export default function RecordingFormDialog({
           disabled={isSaving}
         />
         <TextField
-          label="Raag"
+          label="Raag (optional)"
           fullWidth
-          required
           value={form.raag}
           onChange={(e) => setForm((f) => ({ ...f, raag: e.target.value }))}
           error={!!errors.raag}

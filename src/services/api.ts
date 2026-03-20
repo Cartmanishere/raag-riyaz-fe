@@ -100,7 +100,7 @@ function mapRecording(dto: RecordingDto): Recording {
   return {
     id: dto.id,
     title: dto.title,
-    raag: dto.raag,
+    raag: dto.raag ?? null,
     taal: dto.taal,
     notes: dto.notes,
     mimeType: dto.mime_type,
@@ -121,7 +121,7 @@ function mapAdminUserRecordingAssignment(
     recording: {
       id: dto.recording.id,
       title: dto.recording.title,
-      raag: dto.recording.raag,
+      raag: dto.recording.raag ?? null,
       taal: dto.recording.taal,
       notes: dto.recording.notes,
       mimeType: dto.recording.mime_type,
@@ -153,7 +153,7 @@ function mapAssignedRecording(dto: AssignedRecordingDto): AssignedRecording {
   return {
     id: dto.id,
     title: dto.title,
-    raag: dto.raag,
+    raag: dto.raag ?? null,
     taal: dto.taal,
     notes: dto.notes,
     mimeType: dto.mime_type,
@@ -445,9 +445,9 @@ export const adminRecordingsApi = {
       method: "POST",
       data: buildFormData({
         title: payload.title,
-        raag: payload.raag,
-        taal: payload.taal ?? "",
-        notes: payload.notes ?? "",
+        raag: toNullableField(payload.raag),
+        taal: toNullableField(payload.taal),
+        notes: toNullableField(payload.notes),
         mime_type: payload.mimeType,
         file: payload.file,
       }),
@@ -465,9 +465,9 @@ export const adminRecordingsApi = {
       method: "PATCH",
       data: {
         title: payload.title,
-        raag: payload.raag,
-        taal: payload.taal,
-        notes: payload.notes,
+        raag: toNullableField(payload.raag),
+        taal: toNullableField(payload.taal),
+        notes: toNullableField(payload.notes),
         mime_type: payload.mimeType,
       },
     });

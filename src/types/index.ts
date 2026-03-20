@@ -50,7 +50,7 @@ export interface UserDto {
 export interface RecordingDto {
   id: string;
   title: string;
-  raag: string;
+  raag: string | null;
   taal: string | null;
   notes: string | null;
   mime_type: string;
@@ -75,7 +75,7 @@ export interface DashboardAssignmentDto extends AssignmentDto {
 export interface AssignedRecordingDto {
   id: string;
   title: string;
-  raag: string;
+  raag: string | null;
   taal: string | null;
   notes: string | null;
   mime_type: string;
@@ -142,7 +142,7 @@ export interface User {
 export interface Recording {
   id: string;
   title: string;
-  raag: string;
+  raag: string | null;
   taal: string | null;
   notes: string | null;
   mimeType: string;
@@ -167,7 +167,7 @@ export interface DashboardAssignment extends Assignment {
 export interface AssignedRecording {
   id: string;
   title: string;
-  raag: string;
+  raag: string | null;
   taal: string | null;
   notes: string | null;
   mimeType: string;
@@ -244,7 +244,7 @@ export interface UpdateUserRequest {
 
 export interface CreateRecordingRequest {
   title: string;
-  raag: string;
+  raag?: string | null;
   taal?: string | null;
   notes?: string | null;
   mimeType: string;
@@ -253,7 +253,7 @@ export interface CreateRecordingRequest {
 
 export interface UpdateRecordingRequest {
   title?: string;
-  raag?: string;
+  raag?: string | null;
   taal?: string | null;
   notes?: string | null;
   mimeType?: string;

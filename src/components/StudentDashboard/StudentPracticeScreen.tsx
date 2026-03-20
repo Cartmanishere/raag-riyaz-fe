@@ -159,17 +159,19 @@ export default function StudentPracticeScreen() {
                         {recording.title}
                       </Typography>
                       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        <Chip
-                          size="small"
-                          color="primary"
-                          label={recording.raag}
-                          icon={<AlbumIcon />}
-                        />
-                        {recording.taal ? (
+                        {recording.raag?.trim() ? (
+                          <Chip
+                            size="small"
+                            color="primary"
+                            label={recording.raag.trim()}
+                            icon={<AlbumIcon />}
+                          />
+                        ) : null}
+                        {recording.taal?.trim() ? (
                           <Chip
                             size="small"
                             variant="outlined"
-                            label={`Taal: ${recording.taal}`}
+                            label={`Taal: ${recording.taal.trim()}`}
                           />
                         ) : null}
                       </Stack>

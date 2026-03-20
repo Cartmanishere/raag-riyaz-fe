@@ -270,17 +270,19 @@ export default function RecordingDetailDrawer({
             {recording.title}
           </Typography>
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1.5 }}>
-            <Chip
-              label={recording.raag}
-              size="small"
-              sx={{
-                backgroundColor: "primary.main",
-                color: "primary.contrastText",
-                fontWeight: 600,
-              }}
-            />
-            {recording.taal && (
-              <Chip label={`Taal: ${recording.taal}`} size="small" variant="outlined" />
+            {recording.raag?.trim() ? (
+              <Chip
+                label={recording.raag.trim()}
+                size="small"
+                sx={{
+                  backgroundColor: "primary.main",
+                  color: "primary.contrastText",
+                  fontWeight: 600,
+                }}
+              />
+            ) : null}
+            {recording.taal?.trim() && (
+              <Chip label={`Taal: ${recording.taal.trim()}`} size="small" variant="outlined" />
             )}
           </Box>
           {recording.notes && (

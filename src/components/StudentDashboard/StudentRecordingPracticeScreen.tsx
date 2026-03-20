@@ -277,8 +277,12 @@ export default function StudentRecordingPracticeScreen({
                   {recording.title}
                 </Typography>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  <Chip label={recording.raag} color="primary" />
-                  {recording.taal ? <Chip label={`Taal: ${recording.taal}`} variant="outlined" /> : null}
+                  {recording.raag?.trim() ? (
+                    <Chip label={recording.raag.trim()} color="primary" />
+                  ) : null}
+                  {recording.taal?.trim() ? (
+                    <Chip label={`Taal: ${recording.taal.trim()}`} variant="outlined" />
+                  ) : null}
                   <Chip label={`Assigned ${formatAssignedAt(recording.assignedAt)}`} variant="outlined" />
                 </Stack>
               </Box>

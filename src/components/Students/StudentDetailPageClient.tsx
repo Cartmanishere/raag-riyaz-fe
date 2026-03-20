@@ -366,12 +366,14 @@ export default function StudentDetailPageClient({
                     {assignment.recording.title}
                   </Typography>
                   <Stack spacing={0.5} sx={{ mt: 0.75 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Raag: {assignment.recording.raag}
-                    </Typography>
-                    {assignment.recording.taal ? (
+                    {assignment.recording.raag?.trim() ? (
                       <Typography variant="body2" color="text.secondary">
-                        Taal: {assignment.recording.taal}
+                        Raag: {assignment.recording.raag.trim()}
+                      </Typography>
+                    ) : null}
+                    {assignment.recording.taal?.trim() ? (
+                      <Typography variant="body2" color="text.secondary">
+                        Taal: {assignment.recording.taal.trim()}
                       </Typography>
                     ) : null}
                     {assignment.recording.notes ? (

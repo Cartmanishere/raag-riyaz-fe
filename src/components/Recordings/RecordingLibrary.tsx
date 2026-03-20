@@ -70,19 +70,20 @@ export default function RecordingLibrary() {
   const raagOptions = Array.from(
     new Set(
       recordings
-        .map((recording) => recording.raag.trim())
+        .map((recording) => recording.raag?.trim() ?? "")
         .filter((raag) => raag.length > 0)
     )
   ).sort((left, right) => left.localeCompare(right));
 
   const normalizedSearch = search.trim().toLowerCase();
   const filtered = recordings.filter((recording) => {
+    const recordingRaag = recording.raag?.trim() ?? "";
     const matchesSearch = normalizedSearch
-      ? [recording.title, recording.raag, recording.taal ?? "", recording.notes ?? ""].some(
+      ? [recording.title, recordingRaag, recording.taal ?? "", recording.notes ?? ""].some(
           (value) => value.toLowerCase().includes(normalizedSearch)
         )
       : true;
-    const matchesRaag = raagFilter ? recording.raag === raagFilter : true;
+    const matchesRaag = raagFilter ? recordingRaag === raagFilter : true;
     return matchesSearch && matchesRaag;
   });
 
@@ -129,9 +130,9 @@ export default function RecordingLibrary() {
 
         const createdRecording = await adminRecordingsApi.create({
           title: values.title.trim(),
-          raag: values.raag.trim(),
-          taal: values.taal.trim() || "",
-          notes: values.notes.trim() || "",
+          raag: values.raag.trim() || null,
+          taal: values.taal.trim() || null,
+          notes: values.notes.trim() || null,
           mimeType: values.file.type || "application/octet-stream",
           file: values.file,
         });
@@ -141,7 +142,7 @@ export default function RecordingLibrary() {
       } else if (editTarget) {
         const updatedRecording = await adminRecordingsApi.update(editTarget.id, {
           title: values.title.trim(),
-          raag: values.raag.trim(),
+          raag: values.raag.trim() || null,
           taal: values.taal.trim() ? values.taal.trim() : null,
           notes: values.notes.trim() ? values.notes.trim() : null,
         });

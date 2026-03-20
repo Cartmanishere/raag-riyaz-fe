@@ -24,6 +24,9 @@ export default function RecordingCard({
   onView,
   onEdit,
 }: RecordingCardProps) {
+  const raag = recording.raag?.trim();
+  const taal = recording.taal?.trim();
+
   return (
     <Card
       sx={{
@@ -39,20 +42,21 @@ export default function RecordingCard({
         sx={{ flex: 1, alignItems: "flex-start" }}
       >
         <CardContent sx={{ pb: 1 }}>
-          {/* Icon + raag chip */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-            <MusicNoteIcon sx={{ color: "primary.main", fontSize: 20 }} />
-            <Chip
-              label={recording.raag}
-              size="small"
-              sx={{
-                backgroundColor: "primary.main",
-                color: "primary.contrastText",
-                fontWeight: 600,
-                fontSize: 11,
-              }}
-            />
-          </Box>
+          {raag ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+              <MusicNoteIcon sx={{ color: "primary.main", fontSize: 20 }} />
+              <Chip
+                label={raag}
+                size="small"
+                sx={{
+                  backgroundColor: "primary.main",
+                  color: "primary.contrastText",
+                  fontWeight: 600,
+                  fontSize: 11,
+                }}
+              />
+            </Box>
+          ) : null}
 
           {/* Title */}
           <Typography variant="subtitle2" fontWeight={700} gutterBottom>
@@ -61,7 +65,7 @@ export default function RecordingCard({
 
           {/* Taal */}
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
-            Taal: {recording.taal ?? "—"}
+            Taal: {taal ?? "—"}
           </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
