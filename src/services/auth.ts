@@ -8,8 +8,27 @@ import {
   setSessionSnapshot,
 } from "@/services/auth-session";
 
+export const ADMIN_ROLE = "admin";
+export const USER_ROLE = "user";
+
 export function isAdminActor(role: string) {
-  return role === "admin";
+  return role === ADMIN_ROLE;
+}
+
+export function isStudentActor(role: string) {
+  return role === USER_ROLE;
+}
+
+export function getDefaultRouteForRole(role: string) {
+  if (isAdminActor(role)) {
+    return "/teacher-dashboard/students";
+  }
+
+  if (isStudentActor(role)) {
+    return "/student-dashboard";
+  }
+
+  return "/login";
 }
 
 async function enrichActorProfile(baseActor?: Awaited<ReturnType<typeof authApi.getCurrentActor>>) {

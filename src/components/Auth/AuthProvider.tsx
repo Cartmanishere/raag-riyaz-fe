@@ -13,7 +13,14 @@ import {
   setSessionSnapshot,
   subscribeToSession,
 } from "@/services/auth-session";
-import { fetchCurrentActor, isAdminActor, login, logout } from "@/services/auth";
+import {
+  fetchCurrentActor,
+  getDefaultRouteForRole,
+  isAdminActor,
+  isStudentActor,
+  login,
+  logout,
+} from "@/services/auth";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -22,6 +29,7 @@ interface AuthContextValue {
   session: AuthSession | null;
   status: AuthStatus;
   isTeacher: boolean;
+  isStudent: boolean;
   loginWithPassword: typeof login;
   logout: typeof logout;
 }
@@ -29,9 +37,14 @@ interface AuthContextValue {
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
 const TEACHER_ROUTE_PREFIX = "/teacher-dashboard";
+const STUDENT_ROUTE_PREFIX = "/student-dashboard";
 
 function shouldProtectTeacherRoute(pathname: string) {
   return pathname.startsWith(TEACHER_ROUTE_PREFIX);
+}
+
+function shouldProtectStudentRoute(pathname: string) {
+  return pathname.startsWith(STUDENT_ROUTE_PREFIX);
 }
 
 function isLoginRoute(pathname: string) {
@@ -131,21 +144,30 @@ export default function AuthProvider({
       return;
     }
 
-    if (shouldProtectTeacherRoute(pathname)) {
+    const isTeacherRoute = shouldProtectTeacherRoute(pathname);
+    const isStudentRoute = shouldProtectStudentRoute(pathname);
+
+    if (isTeacherRoute || isStudentRoute) {
       if (!session) {
         router.replace("/login");
         return;
       }
 
-      if (!isAdminActor(session.actor.role)) {
-        void logout();
-        router.replace("/login");
+      if (isTeacherRoute && !isAdminActor(session.actor.role)) {
+        router.replace(getDefaultRouteForRole(session.actor.role));
+        return;
       }
+
+      if (isStudentRoute && !isStudentActor(session.actor.role)) {
+        router.replace(getDefaultRouteForRole(session.actor.role));
+        return;
+      }
+
       return;
     }
 
-    if (isLoginRoute(pathname) && session && isAdminActor(session.actor.role)) {
-      router.replace("/teacher-dashboard/students");
+    if (isLoginRoute(pathname) && session) {
+      router.replace(getDefaultRouteForRole(session.actor.role));
     }
   }, [bootstrapped, pathname, router, session]);
 
@@ -155,6 +177,7 @@ export default function AuthProvider({
       session,
       status,
       isTeacher: Boolean(session && isAdminActor(session.actor.role)),
+      isStudent: Boolean(session && isStudentActor(session.actor.role)),
       loginWithPassword: login,
       logout,
     }),
@@ -163,8 +186,11 @@ export default function AuthProvider({
 
   const showProtectedLoader =
     !bootstrapped ||
-    (shouldProtectTeacherRoute(pathname) &&
-      (status === "loading" || (status === "authenticated" && !contextValue.isTeacher)));
+    ((shouldProtectTeacherRoute(pathname) || shouldProtectStudentRoute(pathname)) &&
+      (status === "loading" ||
+        (status === "authenticated" &&
+          !contextValue.isTeacher &&
+          !contextValue.isStudent)));
 
   if (showProtectedLoader) {
     return (

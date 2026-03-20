@@ -20,7 +20,7 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { ApiError } from "@/types";
 import { useAuth } from "@/components/Auth/AuthProvider";
-import { isAdminActor, logout } from "@/services/auth";
+import { getDefaultRouteForRole } from "@/services/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,14 +37,7 @@ export default function LoginPage() {
 
     try {
       const session = await loginWithPassword(form);
-
-      if (!isAdminActor(session.actor.role)) {
-        await logout();
-        setError("This account does not have teacher access.");
-        return;
-      }
-
-      router.replace("/teacher-dashboard/students");
+      router.replace(getDefaultRouteForRole(session.actor.role));
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.message || "Unable to sign in.");
