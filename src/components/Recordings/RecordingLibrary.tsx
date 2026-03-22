@@ -7,18 +7,23 @@ import {
   Button,
   CircularProgress,
   FormControl,
-  Grid,
   InputAdornment,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
 import UploadIcon from "@mui/icons-material/Upload";
 import SearchIcon from "@mui/icons-material/Search";
-import RecordingCard from "./RecordingCard";
+import EditIcon from "@mui/icons-material/Edit";
 import RecordingFormDialog, { RecordingFormValues } from "./RecordingFormDialog";
 import RecordingDetailDrawer from "./RecordingDetailDrawer";
 import { adminRecordingsApi } from "@/services/api";
@@ -258,17 +263,54 @@ export default function RecordingLibrary() {
           No recordings match your current search or raag filter.
         </Alert>
       ) : (
-        <Grid container spacing={3}>
-          {filtered.map((recording) => (
-            <Grid item xs={12} sm={6} lg={4} key={recording.id}>
-              <RecordingCard
-                recording={recording}
-                onView={handleView}
-                onEdit={handleOpenEdit}
-              />
-            </Grid>
-          ))}
-        </Grid>
+        <TableContainer
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            overflowX: "auto",
+          }}
+        >
+          <Table sx={{ minWidth: 960 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700 }}>
+                  Actions
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filtered.map((recording) => (
+                <TableRow
+                  key={recording.id}
+                  hover
+                  onClick={() => handleView(recording)}
+                  sx={{ cursor: "pointer" }}
+                >
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={600}>
+                      {recording.title}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Button
+                      size="small"
+                      variant="text"
+                      startIcon={<EditIcon fontSize="small" />}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenEdit(recording);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       <RecordingDetailDrawer
