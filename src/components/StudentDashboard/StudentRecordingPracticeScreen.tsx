@@ -93,6 +93,7 @@ export default function StudentRecordingPracticeScreen({
   const [isAttachmentsLoading, setIsAttachmentsLoading] = React.useState(false);
   const [attachmentsError, setAttachmentsError] = React.useState<string | null>(null);
   const attachmentsRequestIdRef = React.useRef(0);
+  const attachmentsRetryCountRef = React.useRef(0);
 
   const activeAttachment = attachments[attachmentIndex] ?? null;
 
@@ -201,6 +202,15 @@ export default function StudentRecordingPracticeScreen({
 
     playbackRetryCountRef.current += 1;
     void loadPlayback({ resetRetryCount: false });
+  };
+
+  const handleImageError = () => {
+    if (attachmentsRetryCountRef.current >= 1) {
+      return;
+    }
+
+    attachmentsRetryCountRef.current += 1;
+    void loadAttachments();
   };
 
   const handlePreviousAttachment = () => {
@@ -464,6 +474,7 @@ export default function StudentRecordingPracticeScreen({
                         <img
                           src={activeAttachment.url}
                           alt="Recording attachment"
+                          onError={handleImageError}
                           style={{
                             display: "block",
                             width: "100%",
@@ -547,6 +558,7 @@ export default function StudentRecordingPracticeScreen({
             <img
               src={imagePreview.url}
               alt="Attachment preview"
+              onError={handleImageError}
               style={{
                 width: "100%",
                 display: "block",

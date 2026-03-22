@@ -7,8 +7,8 @@ import {
   Avatar,
   Box,
   ButtonBase,
-  Button,
   Container,
+  IconButton,
   Toolbar,
   Typography,
 } from "@mui/material";
@@ -144,16 +144,17 @@ export default function StudentDashboardShell({
               {initials}
             </Avatar>
 
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<LogoutIcon />}
+            <IconButton
               onClick={() => void handleLogout()}
               disabled={isLoggingOut}
-              sx={{ borderRadius: 999 }}
+              sx={{
+                border: "1px solid rgba(15, 23, 42, 0.08)",
+                backgroundColor: "rgba(255, 255, 255, 0.92)",
+                "&:hover": { backgroundColor: "rgba(255, 255, 255, 1)" },
+              }}
             >
-              Log out
-            </Button>
+              <LogoutIcon fontSize="small" />
+            </IconButton>
           </Box>
         </Toolbar>
       </AppBar>

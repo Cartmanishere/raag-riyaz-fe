@@ -158,50 +158,6 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         })}
       </List>
 
-      {/* Profile at bottom */}
-      <Divider />
-      <Tooltip title="Profile">
-        <ButtonBase
-          onClick={() => {
-            router.push("/teacher-dashboard/profile");
-            setOpen(false);
-          }}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            px: 2,
-            py: 1.75,
-            width: "100%",
-            justifyContent: "flex-start",
-            "&:hover": { backgroundColor: "action.hover" },
-          }}
-        >
-          <Avatar
-            sx={{
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
-              width: 36,
-              height: 36,
-              fontSize: 14,
-              fontWeight: 700,
-              flexShrink: 0,
-            }}
-          >
-            {initials}
-          </Avatar>
-          <Box sx={{ textAlign: "left", minWidth: 0 }}>
-            <Typography variant="body2" fontWeight={600} noWrap>
-              {displayName || actor?.email || "Teacher"}
-            </Typography>
-            {actor?.email && displayName && (
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {actor.email}
-              </Typography>
-            )}
-          </Box>
-        </ButtonBase>
-      </Tooltip>
     </Box>
   );
 
