@@ -17,7 +17,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import CloseIcon from "@mui/icons-material/Close";
@@ -230,14 +229,6 @@ export default function StudentRecordingPracticeScreen({
   if (pageError || !recording) {
     return (
       <Stack spacing={1.5}>
-        <Button
-          variant="text"
-          startIcon={<ArrowBackRoundedIcon />}
-          onClick={() => router.push("/student-dashboard")}
-          sx={{ alignSelf: "flex-start" }}
-        >
-          Back to assignments
-        </Button>
         <Alert severity="error">{pageError?.message ?? "Unable to load this recording."}</Alert>
         <Box>
           <Button variant="outlined" onClick={() => void loadRecording()}>
@@ -251,104 +242,95 @@ export default function StudentRecordingPracticeScreen({
   return (
     <>
       <Stack spacing={3}>
-        <Button
-          variant="text"
-          startIcon={<ArrowBackRoundedIcon />}
-          onClick={() => router.push("/student-dashboard")}
-          sx={{ alignSelf: "flex-start" }}
-        >
-          Back to assignments
-        </Button>
-
-        <Card
+        <Box
           sx={{
-            borderRadius: 4,
-            color: "#10243f",
-            background:
-              "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240,246,255,0.94) 100%)",
-            border: "1px solid rgba(55,125,205,0.12)",
-            boxShadow: "0 24px 60px rgba(15, 23, 42, 0.06)",
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.15fr) minmax(0, 0.85fr)" },
+            gap: 3,
           }}
         >
-          <CardContent sx={{ p: { xs: 2.5, sm: 3.25 } }}>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="h4" gutterBottom>
-                  {recording.title}
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  {recording.raag?.trim() ? (
-                    <Chip label={recording.raag.trim()} color="primary" />
-                  ) : null}
-                  {recording.taal?.trim() ? (
-                    <Chip label={`Taal: ${recording.taal.trim()}`} variant="outlined" />
-                  ) : null}
-                  <Chip label={`Assigned ${formatAssignedAt(recording.assignedAt)}`} variant="outlined" />
-                </Stack>
-              </Box>
-
-              {isPlaybackLoading ? (
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <CircularProgress size={20} />
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 4,
+              borderColor: "rgba(55,125,205,0.14)",
+              backgroundColor: "rgba(255,255,255,0.95)",
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
+              <Stack spacing={1.5}>
+                <Box>
+                  <Typography variant="h5" fontWeight={700} gutterBottom>
+                    {recording.title}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Loading playback...
+                    Assigned {formatAssignedAt(recording.assignedAt)}
                   </Typography>
-                </Stack>
-              ) : playbackInfo ? (
-                <Stack spacing={1}>
-                  <audio
-                    key={playbackInfo.url}
-                    controls
-                    autoPlay
-                    preload="metadata"
-                    src={playbackInfo.url}
-                    onError={handleAudioError}
-                    style={{ width: "100%" }}
-                  >
-                    Your browser does not support audio playback.
-                  </audio>
-                  <Typography variant="caption" color="text.secondary">
-                    Link expires {formatDateTime(playbackInfo.expiresAt)}
-                  </Typography>
-                </Stack>
-              ) : (
-                <Stack spacing={1.25}>
-                  <Alert severity="error">
-                    {playbackError ?? "Playback is unavailable for this recording."}
-                  </Alert>
-                  <Box>
-                    <Button variant="outlined" onClick={() => void loadPlayback({ resetRetryCount: true })}>
-                      Retry playback
-                    </Button>
-                  </Box>
-                </Stack>
-              )}
-            </Stack>
-          </CardContent>
-        </Card>
+                </Box>
 
-        <Card
-          variant="outlined"
-          sx={{
-            borderRadius: 4,
-            borderColor: "rgba(55,125,205,0.14)",
-            backgroundColor: "rgba(255,255,255,0.95)",
-          }}
-        >
-          <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
-            <Stack spacing={1.25}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <StickyNote2OutlinedIcon color="primary" fontSize="small" />
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Recording note
+                {isPlaybackLoading ? (
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">
+                      Loading playback...
+                    </Typography>
+                  </Stack>
+                ) : playbackInfo ? (
+                  <Stack spacing={1}>
+                    <audio
+                      key={playbackInfo.url}
+                      controls
+                      autoPlay
+                      preload="metadata"
+                      src={playbackInfo.url}
+                      onError={handleAudioError}
+                      style={{ width: "100%" }}
+                    >
+                      Your browser does not support audio playback.
+                    </audio>
+                    <Typography variant="caption" color="text.secondary">
+                      Link expires {formatDateTime(playbackInfo.expiresAt)}
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Stack spacing={1.25}>
+                    <Alert severity="error">
+                      {playbackError ?? "Playback is unavailable for this recording."}
+                    </Alert>
+                    <Box>
+                      <Button variant="outlined" onClick={() => void loadPlayback({ resetRetryCount: true })}>
+                        Retry playback
+                      </Button>
+                    </Box>
+                  </Stack>
+                )}
+              </Stack>
+            </CardContent>
+          </Card>
+
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 4,
+              borderColor: "rgba(55,125,205,0.14)",
+              backgroundColor: "rgba(255,255,255,0.95)",
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
+              <Stack spacing={1.5}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <StickyNote2OutlinedIcon color="primary" fontSize="small" />
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    Recording note
+                  </Typography>
+                </Stack>
+                <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                  {recording.notes?.trim() || "No written notes for this recording."}
                 </Typography>
               </Stack>
-              <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
-                {recording.notes?.trim() || "No written notes for this recording."}
-              </Typography>
-            </Stack>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Box>
 
         <Card
           variant="outlined"
