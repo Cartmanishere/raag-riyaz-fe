@@ -1,22 +1,30 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
+import EditIcon from "@mui/icons-material/Edit";
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
   InputAdornment,
-  Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
+import { deriveActorDisplayName } from "@/services/auth-session";
 import { adminUsersApi } from "@/services/api";
 import { ApiError, User } from "@/types";
 import StudentFormDrawer, { StudentFormValues } from "./StudentFormDrawer";
-import StudentRow from "./StudentRow";
 
 const USER_ROLE = "user";
 
@@ -25,6 +33,7 @@ function toErrorMessage(error: ApiError | null, fallback: string) {
 }
 
 export default function StudentList() {
+  const router = useRouter();
   const [students, setStudents] = React.useState<User[]>([]);
   const [search, setSearch] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(true);
@@ -145,107 +154,133 @@ export default function StudentList() {
   });
 
   return (
-    <Box sx={{ px: { xs: 2, sm: "100px" } }}>
-      {/* Page header */}
+    <Box>
       <Box
         sx={{
           display: "flex",
-          alignItems: "flex-start",
+          alignItems: "center",
           justifyContent: "space-between",
           mb: 3,
-          mt: 1,
+          flexWrap: "wrap",
+          gap: 2,
         }}
       >
         <Box sx={{ textAlign: "center", flex: 1 }}>
-          <Typography variant="h5" fontWeight={700} color="text.primary">
+          <Typography variant="h5" fontWeight={700}>
             Students
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAdd}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>
           Add Student
         </Button>
       </Box>
 
-      {/* Search */}
-      <Paper sx={{ borderRadius: 2, mb: 2 }}>
-        <Box sx={{ px: 2, py: 1.5 }}>
-          <TextField
-            placeholder="Search students by name or email..."
-            size="small"
-            fullWidth
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Box>
-      </Paper>
+      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+        <TextField
+          placeholder="Search students by name or email..."
+          size="small"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          sx={{ flex: 1, minWidth: 200, maxWidth: 360 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
 
-      {/* Students list */}
-      <Paper sx={{ borderRadius: 2, overflow: "hidden" }}>
-        <Box sx={{ px: 2, py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-          <Typography variant="subtitle2" fontWeight={600}>
-            All Students ({filtered.length})
+      {isLoading ? (
+        <Box sx={{ py: 8, textAlign: "center" }}>
+          <CircularProgress size={28} />
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Loading students...
           </Typography>
         </Box>
-
-        {isLoading ? (
-          <Box sx={{ py: 6, textAlign: "center" }}>
-            <CircularProgress size={28} />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Loading students...
-            </Typography>
-          </Box>
-        ) : error ? (
-          <Stack spacing={1} sx={{ py: 6, px: 3, textAlign: "center" }}>
-            <Typography variant="body2" fontWeight={600}>
-              Unable to load students
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {error.message}
-            </Typography>
-            <Box sx={{ pt: 1 }}>
-              <Button variant="outlined" onClick={() => void loadStudents()}>
-                Retry
-              </Button>
-            </Box>
-          </Stack>
-        ) : students.length === 0 ? (
-          <Box sx={{ py: 8, textAlign: "center", px: 3 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              No students found
-            </Typography>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>
-              Add Your First Student
+      ) : error ? (
+        <Stack spacing={1.5} sx={{ py: 6, px: 3, textAlign: "center" }}>
+          <Typography variant="body2" fontWeight={600}>
+            Unable to load students
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {error.message}
+          </Typography>
+          <Box sx={{ pt: 0.5 }}>
+            <Button variant="outlined" onClick={() => void loadStudents()}>
+              Retry
             </Button>
           </Box>
-        ) : filtered.length === 0 ? (
-          <Box sx={{ py: 6, textAlign: "center", px: 3 }}>
-            <Typography variant="body2" color="text.secondary">
-              No students match your current search.
-            </Typography>
-          </Box>
-        ) : (
-          <Box sx={{ p: { xs: 1, sm: 1.5 }, display: "flex", flexDirection: "column", gap: 1 }}>
-            {filtered.map((student) => (
-              <StudentRow
-                key={student.id}
-                student={student}
-                onEdit={handleOpenEdit}
-              />
-            ))}
-          </Box>
-        )}
-      </Paper>
+        </Stack>
+      ) : students.length === 0 ? (
+        <Alert severity="info">
+          No students found.
+        </Alert>
+      ) : filtered.length === 0 ? (
+        <Alert severity="info">
+          No students match your current search.
+        </Alert>
+      ) : (
+        <TableContainer
+          sx={{
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            overflowX: "auto",
+          }}
+        >
+          <Table sx={{ minWidth: 720 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>Student</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Phone</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700 }}>
+                  Actions
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filtered.map((student) => (
+                <TableRow
+                  key={student.id}
+                  hover
+                  onClick={() =>
+                    router.push(`/teacher-dashboard/students/detail?id=${student.id}`)
+                  }
+                  sx={{ cursor: "pointer" }}
+                >
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={600}>
+                      {deriveActorDisplayName(student)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{student.email}</TableCell>
+                  <TableCell>{student.phone || "—"}</TableCell>
+                  <TableCell sx={{ textTransform: "capitalize" }}>
+                    {student.status || "—"}
+                  </TableCell>
+                  <TableCell align="right">
+                    <Button
+                      size="small"
+                      variant="text"
+                      startIcon={<EditIcon fontSize="small" />}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenEdit(student);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <StudentFormDrawer
         open={isDrawerOpen}
