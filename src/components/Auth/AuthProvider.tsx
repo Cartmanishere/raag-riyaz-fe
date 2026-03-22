@@ -190,7 +190,8 @@ export default function AuthProvider({
       (status === "loading" ||
         (status === "authenticated" &&
           !contextValue.isTeacher &&
-          !contextValue.isStudent)));
+          !contextValue.isStudent))) ||
+    (isLoginRoute(pathname) && (status === "loading" || Boolean(session)));
 
   if (showProtectedLoader) {
     return (

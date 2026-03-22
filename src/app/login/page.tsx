@@ -24,11 +24,19 @@ import { getDefaultRouteForRole } from "@/services/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginWithPassword, status } = useAuth();
+  const { loginWithPassword, session, status } = useAuth();
   const [showPassword, setShowPassword] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [form, setForm] = React.useState({ email: "", password: "" });
   const [error, setError] = React.useState("");
+
+  React.useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    router.replace(getDefaultRouteForRole(session.actor.role));
+  }, [router, session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +53,22 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (status === "loading" || session) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "background.default",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -128,7 +152,7 @@ export default function LoginPage() {
               fullWidth
               variant="contained"
               size="large"
-              disabled={isSubmitting || status === "loading"}
+              disabled={isSubmitting}
               sx={{ py: 1.25, fontSize: "1rem" }}
             >
               {isSubmitting ? <CircularProgress size={24} color="inherit" /> : "Log in"}
