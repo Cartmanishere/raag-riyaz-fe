@@ -469,7 +469,20 @@ export default function StudentRecordingPracticeScreen({
                         </Box>
                       </Stack>
                     ) : (
-                      <Box sx={{ position: "relative", cursor: "pointer" }} onClick={() => setImagePreview(activeAttachment)}>
+                      <Box
+                        sx={{
+                          position: "relative",
+                          cursor: "pointer",
+                          minHeight: { xs: 240, sm: 320 },
+                          maxHeight: 420,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          p: 1.5,
+                          backgroundColor: "rgba(255,255,255,0.72)",
+                        }}
+                        onClick={() => setImagePreview(activeAttachment)}
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={activeAttachment.url}
@@ -477,10 +490,11 @@ export default function StudentRecordingPracticeScreen({
                           onError={handleImageError}
                           style={{
                             display: "block",
-                            width: "100%",
-                            minHeight: 240,
-                            maxHeight: 420,
-                            objectFit: "cover",
+                            maxWidth: "100%",
+                            width: "auto",
+                            height: "auto",
+                            maxHeight: 390,
+                            objectFit: "contain",
                           }}
                         />
                       </Box>
