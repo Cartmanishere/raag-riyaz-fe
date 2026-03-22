@@ -6,6 +6,7 @@ import {
   AppBar,
   Avatar,
   Box,
+  ButtonBase,
   Button,
   Container,
   Toolbar,
@@ -65,7 +66,20 @@ export default function StudentDashboardShell({
             justifyContent: "space-between",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, minWidth: 0 }}>
+          <ButtonBase
+            onClick={() => router.push("/student-dashboard")}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: { xs: 1.5, sm: 2 },
+              minWidth: 0,
+              borderRadius: 2.5,
+              px: 1,
+              py: 0.75,
+              ml: -1,
+              "&:hover": { backgroundColor: "rgba(55,125,205,0.08)" },
+            }}
+          >
             <Box
               sx={{
                 width: 48,
@@ -90,7 +104,7 @@ export default function StudentDashboardShell({
                 Student practice
               </Typography>
             </Box>
-          </Box>
+          </ButtonBase>
 
           <Box
             sx={{
