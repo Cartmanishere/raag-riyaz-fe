@@ -1,19 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   Alert,
   Box,
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   Dialog,
   DialogContent,
   IconButton,
   MobileStepper,
+  Slider,
   Stack,
   Typography,
 } from "@mui/material";
@@ -39,19 +38,6 @@ function formatAssignedAt(value: string) {
   }).format(assignedAt);
 }
 
-function formatDateTime(value: string) {
-  const timestamp = new Date(value);
-
-  if (Number.isNaN(timestamp.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(timestamp);
-}
-
 function toErrorMessage(error: ApiError | null, fallback: string) {
   return error?.message ?? fallback;
 }
@@ -75,7 +61,7 @@ interface StudentRecordingPracticeScreenProps {
 export default function StudentRecordingPracticeScreen({
   recordingId,
 }: StudentRecordingPracticeScreenProps) {
-  const router = useRouter();
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [recording, setRecording] = React.useState<AssignedRecording | null>(null);
   const [attachments, setAttachments] = React.useState<RecordingAttachment[]>([]);
   const [attachmentIndex, setAttachmentIndex] = React.useState(0);
@@ -87,6 +73,7 @@ export default function StudentRecordingPracticeScreen({
   const [playbackInfo, setPlaybackInfo] = React.useState<PlaybackInfo | null>(null);
   const [isPlaybackLoading, setIsPlaybackLoading] = React.useState(false);
   const [playbackError, setPlaybackError] = React.useState<string | null>(null);
+  const [playbackRate, setPlaybackRate] = React.useState(1);
   const playbackRetryCountRef = React.useRef(0);
   const playbackRequestIdRef = React.useRef(0);
 
@@ -192,6 +179,12 @@ export default function StudentRecordingPracticeScreen({
     void loadAttachments();
   }, [loadAttachments, loadPlayback, loadRecording]);
 
+  React.useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate, playbackInfo]);
+
   const handleAudioError = () => {
     if (playbackRetryCountRef.current >= 1) {
       setPlaybackError(
@@ -202,6 +195,10 @@ export default function StudentRecordingPracticeScreen({
 
     playbackRetryCountRef.current += 1;
     void loadPlayback({ resetRetryCount: false });
+  };
+
+  const handlePlaybackRateChange = (_event: Event, value: number | number[]) => {
+    setPlaybackRate(Array.isArray(value) ? value[0] : value);
   };
 
   const handleImageError = () => {
@@ -269,14 +266,49 @@ export default function StudentRecordingPracticeScreen({
           >
             <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
               <Stack spacing={1.5}>
-                <Box>
-                  <Typography variant="h5" fontWeight={700} gutterBottom>
-                    {recording.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Assigned {formatAssignedAt(recording.assignedAt)}
-                  </Typography>
-                </Box>
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={2}
+                  justifyContent="space-between"
+                  alignItems={{ xs: "stretch", md: "flex-start" }}
+                >
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="h5" fontWeight={700} gutterBottom>
+                      {recording.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Assigned {formatAssignedAt(recording.assignedAt)}
+                    </Typography>
+                  </Box>
+
+                  {playbackInfo ? (
+                    <Box sx={{ px: 0.5, width: { xs: "100%", md: 220 }, flexShrink: 0 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Playback speed: {playbackRate}x
+                      </Typography>
+                      <Slider
+                        value={playbackRate}
+                        min={0.25}
+                        max={2}
+                        step={0.25}
+                        marks={[
+                          { value: 0.25 },
+                          { value: 0.5 },
+                          { value: 0.75 },
+                          { value: 1 },
+                          { value: 1.25 },
+                          { value: 1.5 },
+                          { value: 1.75 },
+                          { value: 2 },
+                        ]}
+                        onChange={handlePlaybackRateChange}
+                        valueLabelDisplay="auto"
+                        valueLabelFormat={(value) => `${value}x`}
+                        aria-label="Playback speed"
+                      />
+                    </Box>
+                  ) : null}
+                </Stack>
 
                 {isPlaybackLoading ? (
                   <Stack direction="row" spacing={1.5} alignItems="center">
@@ -289,6 +321,7 @@ export default function StudentRecordingPracticeScreen({
                   <Stack spacing={1}>
                     <audio
                       key={playbackInfo.url}
+                      ref={audioRef}
                       controls
                       autoPlay
                       preload="metadata"
@@ -298,9 +331,6 @@ export default function StudentRecordingPracticeScreen({
                     >
                       Your browser does not support audio playback.
                     </audio>
-                    <Typography variant="caption" color="text.secondary">
-                      Link expires {formatDateTime(playbackInfo.expiresAt)}
-                    </Typography>
                   </Stack>
                 ) : (
                   <Stack spacing={1.25}>
