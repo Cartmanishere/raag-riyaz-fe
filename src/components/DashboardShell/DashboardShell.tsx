@@ -76,7 +76,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         flexDirection: "column",
         height: "100%",
         background:
-          "linear-gradient(180deg, rgba(248,251,255,0.98) 0%, rgba(240,246,253,0.96) 100%)",
+          "linear-gradient(180deg, rgba(245,247,250,0.98) 0%, rgba(238,241,245,0.96) 100%)",
       }}
     >
       {/* Drawer header */}
@@ -203,7 +203,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         display: "flex",
         minHeight: "100vh",
         background:
-          "linear-gradient(180deg, rgba(236,244,252,0.9) 0%, rgba(245,248,252,0.96) 24%, #f7f9fc 100%)",
+          "linear-gradient(180deg, rgba(247,249,252,0.98) 0%, rgba(252,253,255,0.98) 28%, #ffffff 100%)",
       }}
     >
       <AppBar
@@ -215,7 +215,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           ml: { md: `${DRAWER_WIDTH}px` },
           backdropFilter: "blur(18px)",
           borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255, 255, 255, 0.72)",
+          backgroundColor: "rgba(255, 255, 255, 0.86)",
           boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
         }}
       >
@@ -318,8 +318,9 @@ export default function DashboardShell({ children }: DashboardShellProps) {
             width: DRAWER_WIDTH,
             height: "100vh",
             borderRight: "1px solid rgba(15, 23, 42, 0.08)",
-            backgroundColor: "rgba(255, 255, 255, 0.68)",
+            backgroundColor: "rgba(243, 246, 249, 0.94)",
             backdropFilter: "blur(18px)",
+            boxShadow: "inset -1px 0 0 rgba(255,255,255,0.45)",
           }}
         >
           {drawerContent}
