@@ -181,26 +181,6 @@ export default function RecordingLibrary() {
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 3,
-          flexWrap: "wrap",
-          gap: 2,
-        }}
-      >
-        <Box sx={{ textAlign: "center", flex: 1 }}>
-          <Typography variant="h5" fontWeight={700}>
-            Recording Management
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<UploadIcon />} onClick={handleOpenAdd}>
-          Upload Recording
-        </Button>
-      </Box>
-
       <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
         <TextField
           placeholder="Search recordings..."
@@ -231,6 +211,9 @@ export default function RecordingLibrary() {
             ))}
           </Select>
         </FormControl>
+        <Button variant="contained" startIcon={<UploadIcon />} onClick={handleOpenAdd}>
+          Upload Recording
+        </Button>
       </Box>
 
       {isLoading ? (

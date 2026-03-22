@@ -155,26 +155,6 @@ export default function StudentList() {
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 3,
-          flexWrap: "wrap",
-          gap: 2,
-        }}
-      >
-        <Box sx={{ textAlign: "center", flex: 1 }}>
-          <Typography variant="h5" fontWeight={700}>
-            Students
-          </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>
-          Add Student
-        </Button>
-      </Box>
-
       <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
         <TextField
           placeholder="Search students by name or email..."
@@ -190,6 +170,9 @@ export default function StudentList() {
             ),
           }}
         />
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenAdd}>
+          Add Student
+        </Button>
       </Box>
 
       {isLoading ? (
