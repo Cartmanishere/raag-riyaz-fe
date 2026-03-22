@@ -12,13 +12,18 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Divider,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Typography,
 } from "@mui/material";
 import StudentFormDrawer, { StudentFormValues } from "@/components/Students/StudentFormDrawer";
 import { deriveActorDisplayName, deriveActorInitials } from "@/services/auth-session";
-import { adminUsersApi } from "@/services/api";
+import { adminRecordingsApi, adminUsersApi } from "@/services/api";
 import { AdminUserRecordingAssignment, ApiError, User } from "@/types";
 
 const USER_ROLE = "user";
@@ -70,6 +75,8 @@ export default function StudentDetailPageClient({
   >([]);
   const [areRecordingsLoading, setAreRecordingsLoading] = React.useState(true);
   const [recordingsError, setRecordingsError] = React.useState<ApiError | null>(null);
+  const [unassigningAssignmentId, setUnassigningAssignmentId] = React.useState<string | null>(null);
+  const [unassignError, setUnassignError] = React.useState<string | null>(null);
 
   const loadStudent = React.useCallback(async () => {
     if (!id.trim()) {
@@ -127,6 +134,7 @@ export default function StudentDetailPageClient({
 
     setAreRecordingsLoading(true);
     setRecordingsError(null);
+    setUnassignError(null);
 
     try {
       const nextAssignedRecordings = await adminUsersApi.listRecordings(id);
@@ -147,6 +155,23 @@ export default function StudentDetailPageClient({
   React.useEffect(() => {
     void loadAssignedRecordings();
   }, [loadAssignedRecordings]);
+
+  const handleUnassign = async (assignment: AdminUserRecordingAssignment) => {
+    setUnassigningAssignmentId(assignment.assignmentId);
+    setUnassignError(null);
+
+    try {
+      await adminRecordingsApi.unassign(assignment.recording.id, assignment.assignedToUserId);
+      setAssignedRecordings((current) =>
+        current.filter((item) => item.assignmentId !== assignment.assignmentId)
+      );
+    } catch (err) {
+      const apiError = err as ApiError;
+      setUnassignError(apiError?.message ?? "Failed to unassign recording.");
+    } finally {
+      setUnassigningAssignmentId(null);
+    }
+  };
 
   const handleSave = async (values: StudentFormValues) => {
     if (!student) {
@@ -359,35 +384,60 @@ export default function StudentDetailPageClient({
               No recordings have been assigned to this student yet.
             </Typography>
           ) : (
-            <Stack divider={<Divider flexItem />} spacing={2} sx={{ pt: 1 }}>
-              {assignedRecordings.map((assignment) => (
-                <Box key={assignment.assignmentId}>
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    {assignment.recording.title}
-                  </Typography>
-                  <Stack spacing={0.5} sx={{ mt: 0.75 }}>
-                    {assignment.recording.raag?.trim() ? (
-                      <Typography variant="body2" color="text.secondary">
-                        Raag: {assignment.recording.raag.trim()}
-                      </Typography>
-                    ) : null}
-                    {assignment.recording.taal?.trim() ? (
-                      <Typography variant="body2" color="text.secondary">
-                        Taal: {assignment.recording.taal.trim()}
-                      </Typography>
-                    ) : null}
-                    {assignment.recording.notes ? (
-                      <Typography variant="body2" color="text.secondary">
-                        Notes: {assignment.recording.notes}
-                      </Typography>
-                    ) : null}
-                    <Typography variant="body2" color="text.secondary">
-                      Assigned: {formatAssignedAt(assignment.assignedAt)}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))}
-            </Stack>
+            <Box sx={{ pt: 1 }}>
+              {unassignError ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {unassignError}
+                </Alert>
+              ) : null}
+              <TableContainer
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 2,
+                  overflowX: "auto",
+                }}
+              >
+                <Table sx={{ minWidth: 720 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Assigned</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700 }}>
+                        Actions
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {assignedRecordings.map((assignment) => (
+                      <TableRow key={assignment.assignmentId} hover>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {assignment.recording.title}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>{formatAssignedAt(assignment.assignedAt)}</TableCell>
+                        <TableCell align="right">
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="text"
+                            onClick={() => {
+                              void handleUnassign(assignment);
+                            }}
+                            disabled={unassigningAssignmentId === assignment.assignmentId}
+                          >
+                            {unassigningAssignmentId === assignment.assignmentId
+                              ? "Unassigning..."
+                              : "Unassign"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           )}
         </CardContent>
       </Card>

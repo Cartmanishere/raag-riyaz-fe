@@ -496,6 +496,15 @@ export const adminRecordingsApi = {
     return mapAssignment(response.assignment);
   },
 
+  async unassign(recordingId: string, userId: string): Promise<DeleteResult> {
+    await request<void>({
+      url: `/admin/recordings/${recordingId}/assign/${userId}`,
+      method: "DELETE",
+    });
+
+    return { success: true };
+  },
+
   async listAttachments(id: string) {
     const response = await request<{ attachments: RecordingAttachmentDto[] }>({
       url: `/admin/recordings/${id}/attachments`,
