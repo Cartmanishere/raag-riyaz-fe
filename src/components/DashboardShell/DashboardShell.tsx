@@ -30,12 +30,12 @@ const DRAWER_WIDTH = 240;
 
 const navItems = [
   {
-    label: "Students Management",
+    label: "Students",
     icon: <PeopleIcon />,
     path: "/teacher-dashboard/students",
   },
   {
-    label: "Recording Management",
+    label: "Recordings",
     icon: <AudiotrackIcon />,
     path: "/teacher-dashboard/recordings",
   },
@@ -107,7 +107,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
 
       <Divider />
 
-      <List sx={{ flex: 1, pt: 1.5, px: 1.25 }}>
+      <List sx={{ flex: 1, pt: 0, px: 0 }}>
         {navItems.map((item) => {
           const active = pathname.startsWith(item.path);
           return (
@@ -120,18 +120,17 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                 }}
                 sx={{
                   minHeight: 52,
-                  px: 2,
-                  borderRadius: 2.5,
-                  mb: 0.75,
+                  px: 2.5,
+                  borderRadius: 0,
                   "&.Mui-selected": {
-                    background:
-                      "linear-gradient(135deg, rgba(55,125,205,1) 0%, rgba(45,104,173,1) 100%)",
-                    color: "primary.contrastText",
-                    boxShadow: "0 12px 24px rgba(55,125,205,0.22)",
+                    backgroundColor: "rgba(55,125,205,0.12)",
+                    color: "text.primary",
+                    borderRight: "3px solid",
+                    borderColor: "primary.main",
                     "& .MuiListItemIcon-root": {
-                      color: "primary.contrastText",
+                      color: "primary.main",
                     },
-                    "&:hover": { backgroundColor: "primary.dark" },
+                    "&:hover": { backgroundColor: "rgba(55,125,205,0.16)" },
                   },
                   "&:hover": {
                     backgroundColor: "rgba(55,125,205,0.08)",
