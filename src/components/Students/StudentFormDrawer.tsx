@@ -5,8 +5,9 @@ import {
   Alert,
   Box,
   Button,
+  Dialog,
+  DialogContent,
   Divider,
-  Drawer,
   IconButton,
   Stack,
   TextField,
@@ -124,11 +125,20 @@ export default function StudentFormDrawer({
   };
 
   return (
-    <Drawer
-      anchor="right"
+    <Dialog
       open={open}
       onClose={isSaving ? undefined : onClose}
-      PaperProps={{ sx: { width: { xs: "100%", sm: 420 }, p: 0 } }}
+      fullWidth
+      maxWidth="sm"
+      scroll="paper"
+      PaperProps={{
+        sx: {
+          width: "100%",
+          maxHeight: "min(88vh, 820px)",
+          borderRadius: 3,
+          p: 0,
+        },
+      }}
     >
       <Box
         sx={{
@@ -149,7 +159,10 @@ export default function StudentFormDrawer({
         </IconButton>
       </Box>
 
-      <Box sx={{ px: 3, py: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+      <DialogContent
+        dividers
+        sx={{ px: 3, py: 3, display: "flex", flexDirection: "column", gap: 3 }}
+      >
         {submitError ? <Alert severity="error">{submitError}</Alert> : null}
 
         <TextField
@@ -227,7 +240,7 @@ export default function StudentFormDrawer({
             <ToggleButton value="inactive">{formatStatusLabel("inactive")}</ToggleButton>
           </ToggleButtonGroup>
         </Box>
-      </Box>
+      </DialogContent>
 
       <Divider />
 
@@ -239,6 +252,6 @@ export default function StudentFormDrawer({
           {isSaving ? "Saving..." : mode === "add" ? "Create Student" : "Save Changes"}
         </Button>
       </Stack>
-    </Drawer>
+    </Dialog>
   );
 }

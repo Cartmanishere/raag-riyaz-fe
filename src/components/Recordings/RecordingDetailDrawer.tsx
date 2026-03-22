@@ -7,8 +7,9 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogContent,
   Divider,
-  Drawer,
   FormControl,
   IconButton,
   InputLabel,
@@ -227,11 +228,19 @@ export default function RecordingDetailDrawer({
   if (!recording) return null;
 
   return (
-    <Drawer
-      anchor="right"
+    <Dialog
       open={open}
       onClose={onClose}
-      PaperProps={{ sx: { width: { xs: "100%", sm: 420 } } }}
+      fullWidth
+      maxWidth="md"
+      scroll="paper"
+      PaperProps={{
+        sx: {
+          width: "100%",
+          maxHeight: "min(88vh, 920px)",
+          borderRadius: 3,
+        },
+      }}
     >
       {/* Header */}
       <Box
@@ -263,7 +272,10 @@ export default function RecordingDetailDrawer({
         </Box>
       </Box>
 
-      <Box sx={{ px: 3, py: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+      <DialogContent
+        dividers
+        sx={{ px: 3, py: 3, display: "flex", flexDirection: "column", gap: 3 }}
+      >
         {/* Details */}
         <Box>
           <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -433,7 +445,7 @@ export default function RecordingDetailDrawer({
             </Typography>
           </Box>
         </Box>
-      </Box>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 }

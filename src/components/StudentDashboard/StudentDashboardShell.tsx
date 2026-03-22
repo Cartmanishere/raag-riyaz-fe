@@ -6,8 +6,9 @@ import {
   AppBar,
   Avatar,
   Box,
-  Button,
+  ButtonBase,
   Container,
+  IconButton,
   Toolbar,
   Typography,
 } from "@mui/material";
@@ -53,7 +54,8 @@ export default function StudentDashboardShell({
         sx={{
           backdropFilter: "blur(16px)",
           borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255, 255, 255, 0.82)",
+          backgroundColor: "rgba(255, 255, 255, 0.72)",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
         }}
       >
         <Toolbar
@@ -64,7 +66,20 @@ export default function StudentDashboardShell({
             justifyContent: "space-between",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 2 }, minWidth: 0 }}>
+          <ButtonBase
+            onClick={() => router.push("/student-dashboard")}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: { xs: 1.5, sm: 2 },
+              minWidth: 0,
+              borderRadius: 2.5,
+              px: 1,
+              py: 0.75,
+              ml: -1,
+              "&:hover": { backgroundColor: "rgba(55,125,205,0.08)" },
+            }}
+          >
             <Box
               sx={{
                 width: 48,
@@ -89,7 +104,7 @@ export default function StudentDashboardShell({
                 Student practice
               </Typography>
             </Box>
-          </Box>
+          </ButtonBase>
 
           <Box
             sx={{
@@ -129,25 +144,27 @@ export default function StudentDashboardShell({
               {initials}
             </Avatar>
 
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<LogoutIcon />}
+            <IconButton
               onClick={() => void handleLogout()}
               disabled={isLoggingOut}
-              sx={{ borderRadius: 999 }}
+              sx={{
+                border: "1px solid rgba(15, 23, 42, 0.08)",
+                backgroundColor: "rgba(255, 255, 255, 0.92)",
+                "&:hover": { backgroundColor: "rgba(255, 255, 255, 1)" },
+              }}
             >
-              Log out
-            </Button>
+              <LogoutIcon fontSize="small" />
+            </IconButton>
           </Box>
         </Toolbar>
       </AppBar>
 
       <Container
-        maxWidth="md"
+        maxWidth={false}
         sx={{
           pt: { xs: 4, sm: 5 },
           pb: { xs: 8, sm: 10 },
+          px: { xs: 2, sm: 3, md: 4 },
         }}
       >
         {children}

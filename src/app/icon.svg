@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="raag-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ef6c00" />
+      <stop offset="100%" stop-color="#c62828" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#fff4e5" />
+  <path
+    d="M41 14v24.5a9.5 9.5 0 1 1-4-7.78V21.2l-12 2.5v18.8a9.5 9.5 0 1 1-4-7.78V19.9c0-1.88 1.32-3.49 3.16-3.86l13-2.71A3.96 3.96 0 0 1 41 14Z"
+    fill="url(#raag-gradient)"
+  />
+</svg>

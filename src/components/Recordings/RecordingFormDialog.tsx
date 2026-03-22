@@ -105,7 +105,7 @@ export default function RecordingFormDialog({
       <DialogTitle
         sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
       >
-        <Typography variant="h6" fontWeight={700}>
+        <Typography variant="h6" fontWeight={700} component="div">
           {mode === "add" ? "Upload Recording" : "Edit Recording"}
         </Typography>
         <IconButton size="small" onClick={onClose} disabled={isSaving}>

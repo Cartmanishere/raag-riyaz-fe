@@ -54,6 +54,7 @@ export default function AttachmentsSection({
   const [attachments, setAttachments] = React.useState<RecordingAttachment[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  const imageRetryCountRef = React.useRef(0);
 
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
@@ -84,6 +85,15 @@ export default function AttachmentsSection({
 
     void loadAttachments();
   }, [loadAttachments, open, recordingId]);
+
+  const handleImageError = () => {
+    if (imageRetryCountRef.current >= 1) {
+      return;
+    }
+
+    imageRetryCountRef.current += 1;
+    void loadAttachments();
+  };
 
   const handleUploadClick = () => {
     setUploadError(null);
@@ -230,6 +240,7 @@ export default function AttachmentsSection({
                     <img
                       src={attachment.url}
                       alt={getAttachmentLabel(attachment)}
+                      onError={handleImageError}
                       style={{
                         width: "100%",
                         height: "100%",
