@@ -53,7 +53,8 @@ export default function StudentDashboardShell({
         sx={{
           backdropFilter: "blur(16px)",
           borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255, 255, 255, 0.82)",
+          backgroundColor: "rgba(255, 255, 255, 0.72)",
+          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
         }}
       >
         <Toolbar
@@ -144,10 +145,11 @@ export default function StudentDashboardShell({
       </AppBar>
 
       <Container
-        maxWidth="md"
+        maxWidth={false}
         sx={{
           pt: { xs: 4, sm: 5 },
           pb: { xs: 8, sm: 10 },
+          px: { xs: 2, sm: 3, md: 4 },
         }}
       >
         {children}
