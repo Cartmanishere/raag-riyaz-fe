@@ -62,10 +62,6 @@ export default function ProfilePage() {
 
   return (
     <Box>
-      <Typography variant="h4" fontWeight={700} sx={{ mb: 4, textAlign: "center" }}>
-        Profile
-      </Typography>
-
       <Grid container spacing={3}>
         {/* Avatar card */}
         <Grid item xs={12} md={4}>
