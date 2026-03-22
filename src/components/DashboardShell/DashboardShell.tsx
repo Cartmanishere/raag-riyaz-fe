@@ -80,7 +80,15 @@ export default function DashboardShell({ children }: DashboardShellProps) {
       }}
     >
       {/* Drawer header */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2.5, py: 2.5 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          px: 3,
+          minHeight: { xs: 72, md: 76 },
+        }}
+      >
         <Box
           sx={{
             width: 42,
