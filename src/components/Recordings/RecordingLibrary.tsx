@@ -23,9 +23,11 @@ import {
 } from "@mui/material";
 import UploadIcon from "@mui/icons-material/Upload";
 import SearchIcon from "@mui/icons-material/Search";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import RecordingFormDialog, { RecordingFormValues } from "./RecordingFormDialog";
 import RecordingDetailDrawer from "./RecordingDetailDrawer";
+import RecordingDeleteConfirmDialog from "./RecordingDeleteConfirmDialog";
 import { adminRecordingsApi } from "@/services/api";
 import { ApiError, Recording } from "@/types";
 
@@ -48,6 +50,9 @@ export default function RecordingLibrary() {
   const [editTarget, setEditTarget] = React.useState<Recording | undefined>();
   const [isSaving, setIsSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<Recording | undefined>();
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
   const loadRecordings = React.useCallback(async () => {
     setIsLoading(true);
@@ -122,6 +127,20 @@ export default function RecordingLibrary() {
     setSubmitError(null);
   };
 
+  const handleOpenDelete = (recording: Recording) => {
+    setDeleteTarget(recording);
+    setDeleteError(null);
+  };
+
+  const handleCloseDelete = () => {
+    if (isDeleting) {
+      return;
+    }
+
+    setDeleteTarget(undefined);
+    setDeleteError(null);
+  };
+
   const handleSave = async (values: RecordingFormValues) => {
     setIsSaving(true);
     setSubmitError(null);
@@ -176,6 +195,37 @@ export default function RecordingLibrary() {
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    const deletedRecordingId = deleteTarget.id;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await adminRecordingsApi.delete(deletedRecordingId);
+      setRecordings((current) =>
+        current.filter((recording) => recording.id !== deletedRecordingId)
+      );
+      setSelectedRecording((current) =>
+        current?.id === deletedRecordingId ? undefined : current
+      );
+      if (selectedRecording?.id === deletedRecordingId) {
+        setDetailOpen(false);
+      }
+      setEditTarget((current) => (current?.id === deletedRecordingId ? undefined : current));
+      setDeleteTarget(undefined);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setDeleteError(toErrorMessage(apiError, "Failed to delete recording."));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -288,6 +338,18 @@ export default function RecordingLibrary() {
                     >
                       Edit
                     </Button>
+                    <Button
+                      size="small"
+                      variant="text"
+                      color="error"
+                      startIcon={<DeleteOutlineIcon fontSize="small" />}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenDelete(recording);
+                      }}
+                    >
+                      Delete
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -301,6 +363,7 @@ export default function RecordingLibrary() {
         recording={selectedRecording}
         onClose={() => setDetailOpen(false)}
         onEdit={handleOpenEdit}
+        onDelete={handleOpenDelete}
       />
 
       <RecordingFormDialog
@@ -312,6 +375,17 @@ export default function RecordingLibrary() {
         onClose={handleCloseForm}
         onSave={(values) => {
           void handleSave(values);
+        }}
+      />
+
+      <RecordingDeleteConfirmDialog
+        open={Boolean(deleteTarget)}
+        recordingTitle={deleteTarget?.title ?? ""}
+        isDeleting={isDeleting}
+        deleteError={deleteError}
+        onClose={handleCloseDelete}
+        onConfirm={() => {
+          void handleDelete();
         }}
       />
     </Box>

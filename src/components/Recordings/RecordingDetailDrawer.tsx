@@ -19,6 +19,7 @@ import {
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import { deriveActorDisplayName } from "@/services/auth-session";
 import { adminRecordingsApi, adminUsersApi } from "@/services/api";
@@ -55,6 +56,7 @@ interface RecordingDetailDrawerProps {
   recording?: Recording;
   onClose: () => void;
   onEdit: (recording: Recording) => void;
+  onDelete: (recording: Recording) => void;
 }
 
 export default function RecordingDetailDrawer({
@@ -62,6 +64,7 @@ export default function RecordingDetailDrawer({
   recording,
   onClose,
   onEdit,
+  onDelete,
 }: RecordingDetailDrawerProps) {
   const [playbackInfo, setPlaybackInfo] = React.useState<PlaybackInfo | null>(null);
   const [isPlaybackLoading, setIsPlaybackLoading] = React.useState(false);
@@ -258,6 +261,15 @@ export default function RecordingDetailDrawer({
           Recording Detail
         </Typography>
         <Box sx={{ display: "flex", gap: 0.5 }}>
+          <Button
+            size="small"
+            color="error"
+            startIcon={<DeleteOutlineIcon />}
+            onClick={() => onDelete(recording)}
+            variant="outlined"
+          >
+            Delete
+          </Button>
           <Button
             size="small"
             startIcon={<EditIcon />}

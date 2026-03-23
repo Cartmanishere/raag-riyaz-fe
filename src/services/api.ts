@@ -475,6 +475,15 @@ export const adminRecordingsApi = {
     return mapRecording(response.recording);
   },
 
+  async delete(id: string): Promise<DeleteResult> {
+    await request<void>({
+      url: `/admin/recordings/${id}`,
+      method: "DELETE",
+    });
+
+    return { success: true };
+  },
+
   async getPlayback(id: string) {
     const response = await request<PlaybackResponseDto>({
       url: `/admin/recordings/${id}/playback`,
