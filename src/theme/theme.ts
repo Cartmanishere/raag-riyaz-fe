@@ -109,8 +109,11 @@ const theme = createTheme({
     MuiInputBase: {
       styleOverrides: {
         root: {
-          fontSize: "0.98rem",
+          fontSize: "1rem",
           lineHeight: 1.5,
+        },
+        input: {
+          fontSize: "1rem",
         },
       },
     },

@@ -43,6 +43,17 @@ const empty: RecordingFormValues = {
   file: null,
 };
 
+const AUDIO_FILE_ACCEPT =
+  ".mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/ogg,audio/flac,audio/*";
+
+function isAudioFile(file: File) {
+  if (file.type.startsWith("audio/")) {
+    return true;
+  }
+
+  return /\.(mp3|wav|m4a|aac|ogg|oga|flac)$/i.test(file.name);
+}
+
 export default function RecordingFormDialog({
   open,
   mode,
@@ -79,7 +90,7 @@ export default function RecordingFormDialog({
     const e: Partial<Record<keyof RecordingFormValues, string>> = {};
     if (!form.title.trim()) e.title = "Title is required";
     if (mode === "add" && !form.file) e.file = "Audio file is required";
-    if (form.file && form.file.type && !form.file.type.startsWith("audio/")) {
+    if (form.file && !isAudioFile(form.file)) {
       e.file = "Selected file must be an audio file";
     }
     return e;
@@ -101,14 +112,14 @@ export default function RecordingFormDialog({
   };
 
   return (
-    <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle
         sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
       >
         <Typography variant="h6" fontWeight={700} component="div">
           {mode === "add" ? "Upload Recording" : "Edit Recording"}
         </Typography>
-        <IconButton size="small" onClick={onClose} disabled={isSaving}>
+        <IconButton size="small" onClick={onClose}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -183,7 +194,7 @@ export default function RecordingFormDialog({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="audio/*"
+                accept={AUDIO_FILE_ACCEPT}
                 hidden
                 onChange={handleFileChange}
                 disabled={isSaving}

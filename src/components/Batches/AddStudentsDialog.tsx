@@ -71,7 +71,7 @@ export default function AddStudentsDialog({
   };
 
   return (
-    <Dialog open={open} onClose={isSaving ? undefined : onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <Box
         sx={{
           display: "flex",
@@ -86,7 +86,7 @@ export default function AddStudentsDialog({
         <Typography variant="h6" fontWeight={700}>
           Add Students
         </Typography>
-        <IconButton onClick={onClose} size="small" disabled={isSaving}>
+        <IconButton onClick={onClose} size="small">
           <CloseIcon />
         </IconButton>
       </Box>

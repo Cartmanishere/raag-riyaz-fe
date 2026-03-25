@@ -127,7 +127,7 @@ export default function StudentFormDrawer({
   return (
     <Dialog
       open={open}
-      onClose={isSaving ? undefined : onClose}
+      onClose={onClose}
       fullWidth
       maxWidth="sm"
       scroll="paper"
@@ -154,7 +154,7 @@ export default function StudentFormDrawer({
         <Typography variant="h6" fontWeight={700}>
           {mode === "add" ? "Add Student" : "Edit Student"}
         </Typography>
-        <IconButton onClick={onClose} size="small" disabled={isSaving}>
+        <IconButton onClick={onClose} size="small">
           <CloseIcon />
         </IconButton>
       </Box>
