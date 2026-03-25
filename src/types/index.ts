@@ -47,6 +47,24 @@ export interface UserDto {
   phone: string | null;
 }
 
+export interface StudentBatchDto {
+  id: string;
+  org_id: string;
+  name: string;
+}
+
+export interface BatchStudentDto {
+  user_id: string;
+  display_name: string | null;
+}
+
+export interface UpdateBatchMembershipResultDto {
+  batch_id: string;
+  added_user_ids: string[];
+  ignored_user_ids: string[];
+  removed_user_ids: string[];
+}
+
 export interface RecordingDto {
   id: string;
   title: string;
@@ -137,6 +155,24 @@ export interface User {
   role: string;
   displayName: string | null;
   phone: string | null;
+}
+
+export interface StudentBatch {
+  id: string;
+  orgId: string;
+  name: string;
+}
+
+export interface BatchStudent {
+  userId: string;
+  displayName: string | null;
+}
+
+export interface UpdateBatchMembershipResult {
+  batchId: string;
+  addedUserIds: string[];
+  ignoredUserIds: string[];
+  removedUserIds: string[];
 }
 
 export interface Recording {
@@ -231,6 +267,10 @@ export interface CreateUserRequest {
   role?: string;
   displayName?: string | null;
   phone?: string | null;
+}
+
+export interface CreateStudentBatchRequest {
+  name: string;
 }
 
 export interface UpdateUserRequest {

@@ -19,8 +19,11 @@ import {
   AuthMeResponseDto,
   AuthResponseDto,
   AuthSession,
+  BatchStudent,
+  BatchStudentDto,
   CreateAssignmentRequest,
   CreateRecordingRequest,
+  CreateStudentBatchRequest,
   CreateUserRequest,
   DashboardAssignment,
   DashboardAssignmentDto,
@@ -32,9 +35,13 @@ import {
   PlaybackResponseDto,
   RecordingAttachment,
   RecordingAttachmentDto,
+  StudentBatch,
+  StudentBatchDto,
   Recording,
   RecordingDto,
   RefreshRequest,
+  UpdateBatchMembershipResult,
+  UpdateBatchMembershipResultDto,
   UpdateRecordingRequest,
   UpdateUserRequest,
   UploadRecordingAttachmentRequest,
@@ -93,6 +100,32 @@ function mapUser(dto: UserDto): User {
     role: dto.role,
     displayName: dto.display_name,
     phone: dto.phone,
+  };
+}
+
+function mapStudentBatch(dto: StudentBatchDto): StudentBatch {
+  return {
+    id: dto.id,
+    orgId: dto.org_id,
+    name: dto.name,
+  };
+}
+
+function mapBatchStudent(dto: BatchStudentDto): BatchStudent {
+  return {
+    userId: dto.user_id,
+    displayName: dto.display_name,
+  };
+}
+
+function mapUpdateBatchMembershipResult(
+  dto: UpdateBatchMembershipResultDto,
+): UpdateBatchMembershipResult {
+  return {
+    batchId: dto.batch_id,
+    addedUserIds: dto.added_user_ids,
+    ignoredUserIds: dto.ignored_user_ids,
+    removedUserIds: dto.removed_user_ids,
   };
 }
 
@@ -417,6 +450,80 @@ export const adminUsersApi = {
     });
 
     return mapUser(response.user);
+  },
+};
+
+export const adminStudentBatchesApi = {
+  async list() {
+    const response = await request<{ batches: StudentBatchDto[] }>({
+      url: "/admin/student-batches",
+      method: "GET",
+    });
+
+    return response.batches.map(mapStudentBatch);
+  },
+
+  async getById(id: string) {
+    const response = await request<{ batch: StudentBatchDto }>({
+      url: `/admin/student-batches/${id}`,
+      method: "GET",
+    });
+
+    return mapStudentBatch(response.batch);
+  },
+
+  async create(payload: CreateStudentBatchRequest) {
+    const response = await request<{ batch: StudentBatchDto }>({
+      url: "/admin/student-batches",
+      method: "POST",
+      data: {
+        name: payload.name,
+      },
+    });
+
+    return mapStudentBatch(response.batch);
+  },
+
+  async delete(id: string): Promise<DeleteResult> {
+    await request<void>({
+      url: `/admin/student-batches/${id}`,
+      method: "DELETE",
+    });
+
+    return { success: true };
+  },
+
+  async listStudents(id: string) {
+    const response = await request<{ students: BatchStudentDto[] }>({
+      url: `/admin/student-batches/${id}/students`,
+      method: "GET",
+    });
+
+    return response.students.map(mapBatchStudent);
+  },
+
+  async bulkAddStudents(id: string, payload: { userIds: string[] }) {
+    const response = await request<UpdateBatchMembershipResultDto>({
+      url: `/admin/student-batches/${id}/students/bulk-add`,
+      method: "POST",
+      data: {
+        user_ids: payload.userIds,
+      },
+    });
+
+    return mapUpdateBatchMembershipResult(response);
+  },
+
+  async bulkRemoveStudents(id: string, payload: { userIds: string[] }) {
+    const response = await request<UpdateBatchMembershipResultDto>({
+      url: `/admin/student-batches/${id}/students/bulk-remove`,
+      method: "POST",
+      data: {
+        user_ids: payload.userIds,
+      },
+    });
+
+    return mapUpdateBatchMembershipResult(response);
   },
 };
 

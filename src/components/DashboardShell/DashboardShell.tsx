@@ -22,6 +22,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import PeopleIcon from "@mui/icons-material/People";
 import AudiotrackIcon from "@mui/icons-material/Audiotrack";
+import GroupsIcon from "@mui/icons-material/Groups";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useActorDisplay, useAuth } from "@/components/Auth/AuthProvider";
@@ -33,6 +34,11 @@ const navItems = [
     label: "Students",
     icon: <PeopleIcon />,
     path: "/teacher-dashboard/students",
+  },
+  {
+    label: "Batches",
+    icon: <GroupsIcon />,
+    path: "/teacher-dashboard/batches",
   },
   {
     label: "Recordings",
