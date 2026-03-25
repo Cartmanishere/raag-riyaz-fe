@@ -54,6 +54,20 @@ function isPdfAttachment(attachment: RecordingAttachment) {
   return attachment.type === "pdf";
 }
 
+function hasAttachmentPreview(attachment: RecordingAttachment) {
+  return Boolean(attachment.previewUrl?.trim());
+}
+
+function getAttachmentDisplayUrl(attachment: RecordingAttachment) {
+  const previewUrl = attachment.previewUrl?.trim();
+  return previewUrl ? previewUrl : attachment.url;
+}
+
+function getAttachmentDisplayMimeType(attachment: RecordingAttachment) {
+  const previewMimeType = attachment.previewMimeType?.trim();
+  return previewMimeType ? previewMimeType : attachment.mimeType;
+}
+
 interface StudentRecordingPracticeScreenProps {
   recordingId: string;
 }
@@ -83,6 +97,15 @@ export default function StudentRecordingPracticeScreen({
   const attachmentsRetryCountRef = React.useRef(0);
 
   const activeAttachment = attachments[attachmentIndex] ?? null;
+  const activeAttachmentDisplayUrl = activeAttachment
+    ? getAttachmentDisplayUrl(activeAttachment)
+    : null;
+  const activeAttachmentDisplayMimeType = activeAttachment
+    ? getAttachmentDisplayMimeType(activeAttachment)
+    : null;
+  const activeAttachmentHasPreview = activeAttachment
+    ? hasAttachmentPreview(activeAttachment)
+    : false;
 
   const loadRecording = React.useCallback(async () => {
     setIsPageLoading(true);
@@ -455,7 +478,7 @@ export default function StudentRecordingPracticeScreen({
                       borderColor: "divider",
                     }}
                   >
-                    {isPdfAttachment(activeAttachment) ? (
+                    {isPdfAttachment(activeAttachment) && !activeAttachmentHasPreview ? (
                       <Stack sx={{ height: "100%" }}>
                         <Stack
                           direction="row"
@@ -469,7 +492,8 @@ export default function StudentRecordingPracticeScreen({
                               PDF attachment
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {activeAttachment.mimeType} • {formatFileSize(activeAttachment.fileSizeBytes)}
+                              {activeAttachmentDisplayMimeType} •{" "}
+                              {formatFileSize(activeAttachment.fileSizeBytes)}
                             </Typography>
                           </Box>
                           <Button
@@ -485,8 +509,8 @@ export default function StudentRecordingPracticeScreen({
                         </Stack>
                         <Box sx={{ flex: 1 }}>
                           <object
-                            data={activeAttachment.url}
-                            type={activeAttachment.mimeType}
+                            data={activeAttachmentDisplayUrl ?? activeAttachment.url}
+                            type={activeAttachmentDisplayMimeType ?? activeAttachment.mimeType}
                             width="100%"
                             height="320"
                           >
@@ -515,7 +539,7 @@ export default function StudentRecordingPracticeScreen({
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={activeAttachment.url}
+                          src={activeAttachmentDisplayUrl ?? activeAttachment.url}
                           alt="Recording attachment"
                           onError={handleImageError}
                           style={{
@@ -542,9 +566,19 @@ export default function StudentRecordingPracticeScreen({
                         ? `Attachment ${attachmentIndex + 1} of ${attachments.length}`
                         : "1 attachment"}
                     </Typography>
-                    {!isPdfAttachment(activeAttachment) ? (
+                    {activeAttachmentHasPreview ? (
                       <Button variant="outlined" onClick={() => setImagePreview(activeAttachment)}>
                         View image
+                      </Button>
+                    ) : isPdfAttachment(activeAttachment) ? (
+                      <Button
+                        variant="outlined"
+                        endIcon={<OpenInNewIcon />}
+                        href={activeAttachment.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open PDF
                       </Button>
                     ) : null}
                   </Stack>
@@ -600,7 +634,7 @@ export default function StudentRecordingPracticeScreen({
           {imagePreview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={imagePreview.url}
+              src={getAttachmentDisplayUrl(imagePreview)}
               alt="Attachment preview"
               onError={handleImageError}
               style={{

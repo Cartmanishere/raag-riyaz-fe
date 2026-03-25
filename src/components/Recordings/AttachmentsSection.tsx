@@ -23,6 +23,8 @@ interface AttachmentsSectionProps {
   open?: boolean;
 }
 
+const MAX_IMAGE_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
 function inferAttachmentType(file: File): RecordingAttachmentType | null {
   if (file.type.startsWith("image/")) {
     return "image";
@@ -45,6 +47,20 @@ function formatFileSize(fileSizeBytes: number) {
 
 function getAttachmentLabel(attachment: RecordingAttachment) {
   return attachment.type === "pdf" ? "PDF attachment" : "Image attachment";
+}
+
+function getAttachmentDisplayUrl(attachment: RecordingAttachment) {
+  const previewUrl = attachment.previewUrl?.trim();
+  return previewUrl ? previewUrl : attachment.url;
+}
+
+function getAttachmentDisplayMimeType(attachment: RecordingAttachment) {
+  const previewMimeType = attachment.previewMimeType?.trim();
+  return previewMimeType ? previewMimeType : attachment.mimeType;
+}
+
+function hasAttachmentPreview(attachment: RecordingAttachment) {
+  return Boolean(attachment.previewUrl?.trim());
 }
 
 export default function AttachmentsSection({
@@ -111,15 +127,29 @@ export default function AttachmentsSection({
     setIsUploading(true);
     setUploadError(null);
 
-    const validFiles = selectedFiles
-      .map((file) => ({
-        file,
-        type: inferAttachmentType(file),
-      }))
+    const typedFiles = selectedFiles.map((file) => ({
+      file,
+      type: inferAttachmentType(file),
+    }));
+    const oversizedImageFiles = typedFiles.filter(
+      (item) =>
+        item.type === "image" && item.file.size > MAX_IMAGE_FILE_SIZE_BYTES,
+    );
+    const validFiles = typedFiles
       .filter(
         (item): item is { file: File; type: RecordingAttachmentType } => item.type !== null
+      )
+      .filter(
+        (item) =>
+          !(item.type === "image" && item.file.size > MAX_IMAGE_FILE_SIZE_BYTES),
       );
-    const invalidFiles = selectedFiles.filter((file) => inferAttachmentType(file) === null);
+    const invalidFiles = typedFiles
+      .map((file) => ({
+        file: file.file,
+        type: file.type,
+      }))
+      .filter((item) => item.type === null)
+      .map((item) => item.file);
     const uploadedAttachments: RecordingAttachment[] = [];
     const failedFileNames: string[] = [];
     let limitReached = false;
@@ -155,6 +185,14 @@ export default function AttachmentsSection({
       if (invalidFiles.length > 0) {
         issues.push(
           `Unsupported files skipped: ${invalidFiles.map((file) => file.name).join(", ")}.`
+        );
+      }
+
+      if (oversizedImageFiles.length > 0) {
+        issues.push(
+          `Selected image must be smaller than 5MB in size: ${oversizedImageFiles
+            .map((item) => item.file.name)
+            .join(", ")}.`
         );
       }
 
@@ -256,6 +294,9 @@ export default function AttachmentsSection({
         >
           {attachments.map((attachment) => {
             const isDeleting = deletingId === attachment.id;
+            const showPreviewImage = hasAttachmentPreview(attachment);
+            const displayUrl = getAttachmentDisplayUrl(attachment);
+            const displayMimeType = getAttachmentDisplayMimeType(attachment);
 
             return (
               <Box
@@ -268,15 +309,17 @@ export default function AttachmentsSection({
                   overflow: "hidden",
                   border: "1px solid",
                   borderColor: "divider",
-                  bgcolor: attachment.type === "image" ? "grey.100" : "background.paper",
+                  bgcolor: showPreviewImage || attachment.type === "image"
+                    ? "grey.100"
+                    : "background.paper",
                   "&:hover .attachment-action": { opacity: 1 },
                 }}
               >
-                {attachment.type === "image" ? (
+                {showPreviewImage || attachment.type === "image" ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={attachment.url}
+                      src={displayUrl}
                       alt={getAttachmentLabel(attachment)}
                       onError={handleImageError}
                       style={{
@@ -298,7 +341,7 @@ export default function AttachmentsSection({
                       }}
                     >
                       <Typography variant="caption" sx={{ display: "block" }}>
-                        {attachment.mimeType}
+                        {displayMimeType}
                       </Typography>
                       <Typography variant="caption" sx={{ display: "block", opacity: 0.85 }}>
                         {formatFileSize(attachment.fileSizeBytes)}
@@ -320,7 +363,7 @@ export default function AttachmentsSection({
                         PDF attachment
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {attachment.mimeType}
+                        {displayMimeType}
                       </Typography>
                     </Stack>
                     <Typography variant="caption" color="text.secondary">

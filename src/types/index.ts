@@ -119,6 +119,9 @@ export interface RecordingAttachmentDto {
   mime_type: string;
   file_size_bytes: number;
   url: string;
+  preview_url: string | null;
+  preview_mime_type: string | null;
+  preview_expiresAt: string | null;
   created_at: string;
   updated_at: string;
   expiresAt: string;
@@ -227,6 +230,9 @@ export interface RecordingAttachment {
   mimeType: string;
   fileSizeBytes: number;
   url: string;
+  previewUrl: string | null;
+  previewMimeType: string | null;
+  previewExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;
