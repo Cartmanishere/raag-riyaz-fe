@@ -418,6 +418,15 @@ export const adminUsersApi = {
     return response.recordings.map(mapAdminUserRecordingAssignment);
   },
 
+  async listStudentBatches(id: string) {
+    const response = await request<{ batches: StudentBatchDto[] }>({
+      url: `/admin/users/${id}/student-batches`,
+      method: "GET",
+    });
+
+    return response.batches.map(mapStudentBatch);
+  },
+
   async create(payload: CreateUserRequest) {
     const response = await request<{ user: UserDto }>({
       url: "/admin/users",

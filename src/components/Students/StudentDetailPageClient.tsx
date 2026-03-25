@@ -13,18 +13,20 @@ import {
   CardContent,
   CircularProgress,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   Typography,
 } from "@mui/material";
 import StudentFormDrawer, { StudentFormValues } from "@/components/Students/StudentFormDrawer";
 import { deriveActorDisplayName, deriveActorInitials } from "@/services/auth-session";
 import { adminRecordingsApi, adminUsersApi } from "@/services/api";
-import { AdminUserRecordingAssignment, ApiError, User } from "@/types";
+import { AdminUserRecordingAssignment, ApiError, StudentBatch, User } from "@/types";
 
 const USER_ROLE = "user";
 
@@ -64,6 +66,7 @@ interface StudentDetailPageClientProps {
 export default function StudentDetailPageClient({
   id,
 }: StudentDetailPageClientProps) {
+  const [activeTab, setActiveTab] = React.useState<"recordings" | "batches">("recordings");
   const [student, setStudent] = React.useState<User | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<ApiError | null>(null);
@@ -77,6 +80,9 @@ export default function StudentDetailPageClient({
   const [recordingsError, setRecordingsError] = React.useState<ApiError | null>(null);
   const [unassigningAssignmentId, setUnassigningAssignmentId] = React.useState<string | null>(null);
   const [unassignError, setUnassignError] = React.useState<string | null>(null);
+  const [batches, setBatches] = React.useState<StudentBatch[]>([]);
+  const [areBatchesLoading, setAreBatchesLoading] = React.useState(true);
+  const [batchesError, setBatchesError] = React.useState<ApiError | null>(null);
 
   const loadStudent = React.useCallback(async () => {
     if (!id.trim()) {
@@ -155,6 +161,40 @@ export default function StudentDetailPageClient({
   React.useEffect(() => {
     void loadAssignedRecordings();
   }, [loadAssignedRecordings]);
+
+  const loadStudentBatches = React.useCallback(async () => {
+    if (!id.trim()) {
+      setBatches([]);
+      setBatchesError({
+        message: "Invalid student ID.",
+        statusCode: 404,
+      });
+      setAreBatchesLoading(false);
+      return;
+    }
+
+    setAreBatchesLoading(true);
+    setBatchesError(null);
+
+    try {
+      const nextBatches = await adminUsersApi.listStudentBatches(id);
+      setBatches(nextBatches);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setBatches([]);
+      setBatchesError({
+        code: apiError?.code,
+        message: apiError?.message ?? "Failed to load student batches.",
+        statusCode: apiError?.statusCode ?? 500,
+      });
+    } finally {
+      setAreBatchesLoading(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    void loadStudentBatches();
+  }, [loadStudentBatches]);
 
   const handleUnassign = async (assignment: AdminUserRecordingAssignment) => {
     setUnassigningAssignmentId(assignment.assignmentId);
@@ -360,84 +400,167 @@ export default function StudentDetailPageClient({
 
       <Card>
         <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
-            Recordings
-          </Typography>
-          {areRecordingsLoading ? (
-            <Box sx={{ py: 4, textAlign: "center" }}>
-              <CircularProgress size={24} />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                Loading assigned recordings...
+          <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_event, value: "recordings" | "batches") => setActiveTab(value)}
+            >
+              <Tab label={`Recordings (${assignedRecordings.length})`} value="recordings" />
+              <Tab label={`Batches (${batches.length})`} value="batches" />
+            </Tabs>
+          </Box>
+
+          {activeTab === "recordings" ? (
+            <>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                Recordings
               </Typography>
-            </Box>
-          ) : recordingsError ? (
-            <Stack spacing={1.5} sx={{ pt: 1 }}>
-              <Alert severity="error">{recordingsError.message}</Alert>
-              <Box>
-                <Button variant="outlined" onClick={() => void loadAssignedRecordings()}>
-                  Retry
-                </Button>
-              </Box>
-            </Stack>
-          ) : assignedRecordings.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No recordings have been assigned to this student yet.
-            </Typography>
+              {areRecordingsLoading ? (
+                <Box sx={{ py: 4, textAlign: "center" }}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                    Loading assigned recordings...
+                  </Typography>
+                </Box>
+              ) : recordingsError ? (
+                <Stack spacing={1.5} sx={{ pt: 1 }}>
+                  <Alert severity="error">{recordingsError.message}</Alert>
+                  <Box>
+                    <Button variant="outlined" onClick={() => void loadAssignedRecordings()}>
+                      Retry
+                    </Button>
+                  </Box>
+                </Stack>
+              ) : assignedRecordings.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No recordings have been assigned to this student yet.
+                </Typography>
+              ) : (
+                <Box sx={{ pt: 1 }}>
+                  {unassignError ? (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      {unassignError}
+                    </Alert>
+                  ) : null}
+                  <TableContainer
+                    sx={{
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 2,
+                      overflowX: "auto",
+                    }}
+                  >
+                    <Table sx={{ minWidth: 720 }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Assigned</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>
+                            Actions
+                          </TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {assignedRecordings.map((assignment) => (
+                          <TableRow key={assignment.assignmentId} hover>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight={600}>
+                                {assignment.recording.title}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>{formatAssignedAt(assignment.assignedAt)}</TableCell>
+                            <TableCell align="right">
+                              <Button
+                                size="small"
+                                color="error"
+                                variant="text"
+                                onClick={() => {
+                                  void handleUnassign(assignment);
+                                }}
+                                disabled={unassigningAssignmentId === assignment.assignmentId}
+                              >
+                                {unassigningAssignmentId === assignment.assignmentId
+                                  ? "Unassigning..."
+                                  : "Unassign"}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+            </>
           ) : (
-            <Box sx={{ pt: 1 }}>
-              {unassignError ? (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {unassignError}
-                </Alert>
-              ) : null}
-              <TableContainer
-                sx={{
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 2,
-                  overflowX: "auto",
-                }}
-              >
-                <Table sx={{ minWidth: 720 }}>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Assigned</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>
-                        Actions
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {assignedRecordings.map((assignment) => (
-                      <TableRow key={assignment.assignmentId} hover>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={600}>
-                            {assignment.recording.title}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{formatAssignedAt(assignment.assignedAt)}</TableCell>
-                        <TableCell align="right">
-                          <Button
-                            size="small"
-                            color="error"
-                            variant="text"
-                            onClick={() => {
-                              void handleUnassign(assignment);
-                            }}
-                            disabled={unassigningAssignmentId === assignment.assignmentId}
-                          >
-                            {unassigningAssignmentId === assignment.assignmentId
-                              ? "Unassigning..."
-                              : "Unassign"}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
+            <>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                Batches
+              </Typography>
+              {areBatchesLoading ? (
+                <Box sx={{ py: 4, textAlign: "center" }}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                    Loading student batches...
+                  </Typography>
+                </Box>
+              ) : batchesError ? (
+                <Stack spacing={1.5} sx={{ pt: 1 }}>
+                  <Alert severity="error">{batchesError.message}</Alert>
+                  <Box>
+                    <Button variant="outlined" onClick={() => void loadStudentBatches()}>
+                      Retry
+                    </Button>
+                  </Box>
+                </Stack>
+              ) : batches.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  This student is not part of any batch yet.
+                </Typography>
+              ) : (
+                <Box sx={{ pt: 1 }}>
+                  <TableContainer
+                    sx={{
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 2,
+                      overflowX: "auto",
+                    }}
+                  >
+                    <Table sx={{ minWidth: 720 }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>Batch Name</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Batch ID</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {batches.map((batch) => (
+                          <TableRow key={batch.id} hover>
+                            <TableCell>
+                              <Link
+                                href={`/teacher-dashboard/batches/detail?id=${batch.id}`}
+                                style={{ textDecoration: "none" }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  color="primary.main"
+                                  sx={{ "&:hover": { textDecoration: "underline" } }}
+                                >
+                                  {batch.name}
+                                </Typography>
+                              </Link>
+                            </TableCell>
+                            <TableCell>{batch.id}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -101,37 +101,74 @@ export default function AttachmentsSection({
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
+    const selectedFiles = Array.from(event.target.files ?? []);
+    if (selectedFiles.length === 0) {
       return;
     }
 
     event.target.value = "";
 
-    const attachmentType = inferAttachmentType(file);
-    if (!attachmentType) {
-      setUploadError("Only image and PDF attachments are supported.");
-      return;
-    }
-
     setIsUploading(true);
     setUploadError(null);
 
-    try {
-      const uploaded = await adminRecordingsApi.uploadAttachment(recordingId, {
+    const validFiles = selectedFiles
+      .map((file) => ({
         file,
-        type: attachmentType,
-        mimeType: file.type || undefined,
-      });
-
-      setAttachments((current) => [...current, uploaded]);
-    } catch (err) {
-      const apiError = err as ApiError;
-      setUploadError(
-        apiError?.statusCode === 409
-          ? "Recording already has the maximum number of attachments."
-          : (apiError?.message ?? "Failed to upload attachment."),
+        type: inferAttachmentType(file),
+      }))
+      .filter(
+        (item): item is { file: File; type: RecordingAttachmentType } => item.type !== null
       );
+    const invalidFiles = selectedFiles.filter((file) => inferAttachmentType(file) === null);
+    const uploadedAttachments: RecordingAttachment[] = [];
+    const failedFileNames: string[] = [];
+    let limitReached = false;
+
+    try {
+      for (const { file, type } of validFiles) {
+        try {
+          const uploaded = await adminRecordingsApi.uploadAttachment(recordingId, {
+            file,
+            type,
+            mimeType: file.type || undefined,
+          });
+
+          uploadedAttachments.push(uploaded);
+        } catch (err) {
+          const apiError = err as ApiError;
+
+          if (apiError?.statusCode === 409) {
+            limitReached = true;
+            break;
+          }
+
+          failedFileNames.push(file.name);
+        }
+      }
+
+      if (uploadedAttachments.length > 0) {
+        setAttachments((current) => [...current, ...uploadedAttachments]);
+      }
+
+      const issues: string[] = [];
+
+      if (invalidFiles.length > 0) {
+        issues.push(
+          `Unsupported files skipped: ${invalidFiles.map((file) => file.name).join(", ")}.`
+        );
+      }
+
+      if (failedFileNames.length > 0) {
+        issues.push(`Failed to upload: ${failedFileNames.join(", ")}.`);
+      }
+
+      if (limitReached) {
+        issues.push("Recording already has the maximum number of attachments.");
+      }
+
+      if (issues.length > 0) {
+        setUploadError(issues.join(" "));
+      }
     } finally {
       setIsUploading(false);
     }
@@ -171,6 +208,7 @@ export default function AttachmentsSection({
         <input
           ref={fileInputRef}
           type="file"
+          multiple
           accept="image/*,application/pdf"
           style={{ display: "none" }}
           onChange={(event) => void handleFileChange(event)}
