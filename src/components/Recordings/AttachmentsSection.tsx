@@ -20,7 +20,7 @@ import { ApiError, RecordingAttachment, RecordingAttachmentType } from "@/types"
 
 interface AttachmentsSectionProps {
   recordingId: string;
-  open: boolean;
+  open?: boolean;
 }
 
 function inferAttachmentType(file: File): RecordingAttachmentType | null {
@@ -49,7 +49,7 @@ function getAttachmentLabel(attachment: RecordingAttachment) {
 
 export default function AttachmentsSection({
   recordingId,
-  open,
+  open = true,
 }: AttachmentsSectionProps) {
   const [attachments, setAttachments] = React.useState<RecordingAttachment[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);

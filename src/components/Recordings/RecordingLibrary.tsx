@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   Alert,
   Box,
@@ -24,9 +25,7 @@ import {
 import UploadIcon from "@mui/icons-material/Upload";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import EditIcon from "@mui/icons-material/Edit";
 import RecordingFormDialog, { RecordingFormValues } from "./RecordingFormDialog";
-import RecordingDetailDrawer from "./RecordingDetailDrawer";
 import RecordingDeleteConfirmDialog from "./RecordingDeleteConfirmDialog";
 import { adminRecordingsApi } from "@/services/api";
 import { ApiError, Recording } from "@/types";
@@ -36,18 +35,14 @@ function toErrorMessage(error: ApiError | null, fallback: string) {
 }
 
 export default function RecordingLibrary() {
+  const router = useRouter();
   const [recordings, setRecordings] = React.useState<Recording[]>([]);
   const [search, setSearch] = React.useState("");
   const [raagFilter, setRaagFilter] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<ApiError | null>(null);
 
-  const [detailOpen, setDetailOpen] = React.useState(false);
-  const [selectedRecording, setSelectedRecording] = React.useState<Recording | undefined>();
-
   const [formOpen, setFormOpen] = React.useState(false);
-  const [formMode, setFormMode] = React.useState<"add" | "edit">("add");
-  const [editTarget, setEditTarget] = React.useState<Recording | undefined>();
   const [isSaving, setIsSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Recording | undefined>();
@@ -98,21 +93,10 @@ export default function RecordingLibrary() {
   });
 
   const handleView = (recording: Recording) => {
-    setSelectedRecording(recording);
-    setDetailOpen(true);
+    router.push(`/teacher-dashboard/recordings/detail?id=${recording.id}`);
   };
 
   const handleOpenAdd = () => {
-    setFormMode("add");
-    setEditTarget(undefined);
-    setSubmitError(null);
-    setFormOpen(true);
-  };
-
-  const handleOpenEdit = (recording: Recording) => {
-    setDetailOpen(false);
-    setFormMode("edit");
-    setEditTarget(recording);
     setSubmitError(null);
     setFormOpen(true);
   };
@@ -123,7 +107,6 @@ export default function RecordingLibrary() {
     }
 
     setFormOpen(false);
-    setEditTarget(undefined);
     setSubmitError(null);
   };
 
@@ -146,41 +129,21 @@ export default function RecordingLibrary() {
     setSubmitError(null);
 
     try {
-      if (formMode === "add") {
-        if (!values.file) {
-          setSubmitError("Audio file is required.");
-          return;
-        }
-
-        const createdRecording = await adminRecordingsApi.create({
-          title: values.title.trim(),
-          raag: values.raag.trim() || null,
-          taal: values.taal.trim() || null,
-          notes: values.notes.trim() || null,
-          mimeType: values.file.type || "application/octet-stream",
-          file: values.file,
-        });
-
-        setRecordings((current) => [createdRecording, ...current]);
-        setSelectedRecording(createdRecording);
-      } else if (editTarget) {
-        const updatedRecording = await adminRecordingsApi.update(editTarget.id, {
-          title: values.title.trim(),
-          raag: values.raag.trim() || null,
-          taal: values.taal.trim() ? values.taal.trim() : null,
-          notes: values.notes.trim() ? values.notes.trim() : null,
-        });
-
-        setRecordings((current) =>
-          current.map((recording) =>
-            recording.id === updatedRecording.id ? updatedRecording : recording
-          )
-        );
-        setSelectedRecording((current) =>
-          current?.id === updatedRecording.id ? updatedRecording : current
-        );
-        setEditTarget(updatedRecording);
+      if (!values.file) {
+        setSubmitError("Audio file is required.");
+        return;
       }
+
+      const createdRecording = await adminRecordingsApi.create({
+        title: values.title.trim(),
+        raag: values.raag.trim() || null,
+        taal: values.taal.trim() || null,
+        notes: values.notes.trim() || null,
+        mimeType: values.file.type || "application/octet-stream",
+        file: values.file,
+      });
+
+      setRecordings((current) => [createdRecording, ...current]);
 
       setFormOpen(false);
     } catch (err) {
@@ -188,9 +151,7 @@ export default function RecordingLibrary() {
       setSubmitError(
         toErrorMessage(
           apiError,
-          formMode === "add"
-            ? "Failed to upload recording."
-            : "Failed to update recording."
+          "Failed to upload recording."
         )
       );
     } finally {
@@ -213,13 +174,6 @@ export default function RecordingLibrary() {
       setRecordings((current) =>
         current.filter((recording) => recording.id !== deletedRecordingId)
       );
-      setSelectedRecording((current) =>
-        current?.id === deletedRecordingId ? undefined : current
-      );
-      if (selectedRecording?.id === deletedRecordingId) {
-        setDetailOpen(false);
-      }
-      setEditTarget((current) => (current?.id === deletedRecordingId ? undefined : current));
       setDeleteTarget(undefined);
     } catch (err) {
       const apiError = err as ApiError;
@@ -330,23 +284,22 @@ export default function RecordingLibrary() {
                     <Button
                       size="small"
                       variant="text"
-                      startIcon={<EditIcon fontSize="small" />}
                       onClick={(event) => {
                         event.stopPropagation();
-                        handleOpenEdit(recording);
+                        handleView(recording);
                       }}
                     >
-                      Edit
+                      Manage
                     </Button>
                     <Button
                       size="small"
                       variant="text"
-                      color="error"
-                      startIcon={<DeleteOutlineIcon fontSize="small" />}
                       onClick={(event) => {
                         event.stopPropagation();
                         handleOpenDelete(recording);
                       }}
+                      color="error"
+                      startIcon={<DeleteOutlineIcon fontSize="small" />}
                     >
                       Delete
                     </Button>
@@ -358,18 +311,9 @@ export default function RecordingLibrary() {
         </TableContainer>
       )}
 
-      <RecordingDetailDrawer
-        open={detailOpen}
-        recording={selectedRecording}
-        onClose={() => setDetailOpen(false)}
-        onEdit={handleOpenEdit}
-        onDelete={handleOpenDelete}
-      />
-
       <RecordingFormDialog
         open={formOpen}
-        mode={formMode}
-        recording={editTarget}
+        mode="add"
         isSaving={isSaving}
         submitError={submitError}
         onClose={handleCloseForm}
