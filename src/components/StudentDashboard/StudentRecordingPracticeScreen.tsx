@@ -12,7 +12,6 @@ import {
   DialogContent,
   IconButton,
   MobileStepper,
-  Slider,
   Stack,
   Typography,
 } from "@mui/material";
@@ -21,6 +20,7 @@ import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import CloseIcon from "@mui/icons-material/Close";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
+import RotateRightIcon from "@mui/icons-material/RotateRight";
 import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
 import SubscriptionsOutlinedIcon from "@mui/icons-material/SubscriptionsOutlined";
 import { ApiError, AssignedRecording, PlaybackInfo, RecordingAttachment } from "@/types";
@@ -80,6 +80,7 @@ export default function StudentRecordingPracticeScreen({
   const [attachments, setAttachments] = React.useState<RecordingAttachment[]>([]);
   const [attachmentIndex, setAttachmentIndex] = React.useState(0);
   const [imagePreview, setImagePreview] = React.useState<RecordingAttachment | null>(null);
+  const [imagePreviewRotation, setImagePreviewRotation] = React.useState(0);
 
   const [isPageLoading, setIsPageLoading] = React.useState(true);
   const [pageError, setPageError] = React.useState<ApiError | null>(null);
@@ -87,7 +88,6 @@ export default function StudentRecordingPracticeScreen({
   const [playbackInfo, setPlaybackInfo] = React.useState<PlaybackInfo | null>(null);
   const [isPlaybackLoading, setIsPlaybackLoading] = React.useState(false);
   const [playbackError, setPlaybackError] = React.useState<string | null>(null);
-  const [playbackRate, setPlaybackRate] = React.useState(1);
   const playbackRetryCountRef = React.useRef(0);
   const playbackRequestIdRef = React.useRef(0);
 
@@ -106,6 +106,7 @@ export default function StudentRecordingPracticeScreen({
   const activeAttachmentHasPreview = activeAttachment
     ? hasAttachmentPreview(activeAttachment)
     : false;
+  const recordingNotes = recording?.notes?.trim() ?? "";
 
   const loadRecording = React.useCallback(async () => {
     setIsPageLoading(true);
@@ -202,12 +203,6 @@ export default function StudentRecordingPracticeScreen({
     void loadAttachments();
   }, [loadAttachments, loadPlayback, loadRecording]);
 
-  React.useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.playbackRate = playbackRate;
-    }
-  }, [playbackRate, playbackInfo]);
-
   const handleAudioError = () => {
     if (playbackRetryCountRef.current >= 1) {
       setPlaybackError(
@@ -218,10 +213,6 @@ export default function StudentRecordingPracticeScreen({
 
     playbackRetryCountRef.current += 1;
     void loadPlayback({ resetRetryCount: false });
-  };
-
-  const handlePlaybackRateChange = (_event: Event, value: number | number[]) => {
-    setPlaybackRate(Array.isArray(value) ? value[0] : value);
   };
 
   const handleImageError = () => {
@@ -243,6 +234,16 @@ export default function StudentRecordingPracticeScreen({
     setAttachmentIndex((current) =>
       current === attachments.length - 1 ? 0 : current + 1,
     );
+  };
+
+  const handleOpenImagePreview = (attachment: RecordingAttachment) => {
+    setImagePreview(attachment);
+    setImagePreviewRotation(0);
+  };
+
+  const handleCloseImagePreview = () => {
+    setImagePreview(null);
+    setImagePreviewRotation(0);
   };
 
   if (isPageLoading) {
@@ -275,7 +276,9 @@ export default function StudentRecordingPracticeScreen({
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.15fr) minmax(0, 0.85fr)" },
+            gridTemplateColumns: recordingNotes
+              ? { xs: "1fr", lg: "minmax(0, 1.15fr) minmax(0, 0.85fr)" }
+              : "1fr",
             gap: 3,
           }}
         >
@@ -303,34 +306,6 @@ export default function StudentRecordingPracticeScreen({
                       Assigned {formatAssignedAt(recording.assignedAt)}
                     </Typography>
                   </Box>
-
-                  {playbackInfo ? (
-                    <Box sx={{ px: 0.5, width: { xs: "100%", md: 220 }, flexShrink: 0 }}>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Playback speed: {playbackRate}x
-                      </Typography>
-                      <Slider
-                        value={playbackRate}
-                        min={0.25}
-                        max={2}
-                        step={0.25}
-                        marks={[
-                          { value: 0.25 },
-                          { value: 0.5 },
-                          { value: 0.75 },
-                          { value: 1 },
-                          { value: 1.25 },
-                          { value: 1.5 },
-                          { value: 1.75 },
-                          { value: 2 },
-                        ]}
-                        onChange={handlePlaybackRateChange}
-                        valueLabelDisplay="auto"
-                        valueLabelFormat={(value) => `${value}x`}
-                        aria-label="Playback speed"
-                      />
-                    </Box>
-                  ) : null}
                 </Stack>
 
                 {isPlaybackLoading ? (
@@ -371,28 +346,30 @@ export default function StudentRecordingPracticeScreen({
             </CardContent>
           </Card>
 
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 4,
-              borderColor: "rgba(55,125,205,0.14)",
-              backgroundColor: "rgba(255,255,255,0.95)",
-            }}
-          >
-            <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
-              <Stack spacing={1.5}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <StickyNote2OutlinedIcon color="primary" fontSize="small" />
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    Recording note
+          {recordingNotes ? (
+            <Card
+              variant="outlined"
+              sx={{
+                borderRadius: 4,
+                borderColor: "rgba(55,125,205,0.14)",
+                backgroundColor: "rgba(255,255,255,0.95)",
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
+                <Stack spacing={1.5}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <StickyNote2OutlinedIcon color="primary" fontSize="small" />
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      Recording note
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                    {recordingNotes}
                   </Typography>
                 </Stack>
-                <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
-                  {recording.notes?.trim() || "No written notes for this recording."}
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : null}
         </Box>
 
         <Card
@@ -535,7 +512,7 @@ export default function StudentRecordingPracticeScreen({
                           p: 1.5,
                           backgroundColor: "rgba(255,255,255,0.72)",
                         }}
-                        onClick={() => setImagePreview(activeAttachment)}
+                        onClick={() => handleOpenImagePreview(activeAttachment)}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -567,7 +544,7 @@ export default function StudentRecordingPracticeScreen({
                         : "1 attachment"}
                     </Typography>
                     {activeAttachmentHasPreview ? (
-                      <Button variant="outlined" onClick={() => setImagePreview(activeAttachment)}>
+                      <Button variant="outlined" onClick={() => handleOpenImagePreview(activeAttachment)}>
                         View image
                       </Button>
                     ) : isPdfAttachment(activeAttachment) ? (
@@ -607,7 +584,7 @@ export default function StudentRecordingPracticeScreen({
 
       <Dialog
         open={Boolean(imagePreview)}
-        onClose={() => setImagePreview(null)}
+        onClose={handleCloseImagePreview}
         maxWidth="lg"
         fullWidth
       >
@@ -616,10 +593,34 @@ export default function StudentRecordingPracticeScreen({
             p: 0,
             bgcolor: "#0f172a",
             position: "relative",
+            overflow: "auto",
           }}
         >
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              zIndex: 1,
+            }}
+          >
+            <IconButton
+              onClick={() =>
+                setImagePreviewRotation((current) => (current + 90) % 360)
+              }
+              sx={{
+                color: "#fff",
+                bgcolor: "rgba(15, 23, 42, 0.54)",
+              }}
+              aria-label="Rotate image right"
+            >
+              <RotateRightIcon />
+            </IconButton>
+          </Stack>
           <IconButton
-            onClick={() => setImagePreview(null)}
+            onClick={handleCloseImagePreview}
             sx={{
               position: "absolute",
               top: 12,
@@ -632,18 +633,32 @@ export default function StudentRecordingPracticeScreen({
             <CloseIcon />
           </IconButton>
           {imagePreview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={getAttachmentDisplayUrl(imagePreview)}
-              alt="Attachment preview"
-              onError={handleImageError}
-              style={{
-                width: "100%",
-                display: "block",
-                maxHeight: "90vh",
-                objectFit: "contain",
+            <Box
+              sx={{
+                minHeight: "90vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: { xs: 2, sm: 3, md: 4 },
               }}
-            />
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getAttachmentDisplayUrl(imagePreview)}
+                alt="Attachment preview"
+                onError={handleImageError}
+                style={{
+                  display: "block",
+                  maxWidth: imagePreviewRotation % 180 === 0 ? "100%" : "75vh",
+                  maxHeight: imagePreviewRotation % 180 === 0 ? "75vh" : "100%",
+                  width: "auto",
+                  height: "auto",
+                  objectFit: "contain",
+                  transform: `rotate(${imagePreviewRotation}deg)`,
+                  transformOrigin: "center center",
+                }}
+              />
+            </Box>
           ) : null}
         </DialogContent>
       </Dialog>
