@@ -51,6 +51,25 @@ function isLoginRoute(pathname: string) {
   return pathname === "/login";
 }
 
+function isAuthorizedForPath(
+  pathname: string,
+  actor: AuthActor | null | undefined,
+) {
+  if (!actor) {
+    return false;
+  }
+
+  if (shouldProtectTeacherRoute(pathname)) {
+    return isAdminActor(actor.role);
+  }
+
+  if (shouldProtectStudentRoute(pathname)) {
+    return isStudentActor(actor.role);
+  }
+
+  return true;
+}
+
 export function useAuth() {
   const context = React.useContext(AuthContext);
   if (!context) {
@@ -184,13 +203,13 @@ export default function AuthProvider({
     [session, status]
   );
 
+  const isProtectedRoute =
+    shouldProtectTeacherRoute(pathname) || shouldProtectStudentRoute(pathname);
+  const isAuthorized = isAuthorizedForPath(pathname, session?.actor);
+
   const showProtectedLoader =
     !bootstrapped ||
-    ((shouldProtectTeacherRoute(pathname) || shouldProtectStudentRoute(pathname)) &&
-      (status === "loading" ||
-        (status === "authenticated" &&
-          !contextValue.isTeacher &&
-          !contextValue.isStudent))) ||
+    (isProtectedRoute && (!session || status === "loading" || !isAuthorized)) ||
     (isLoginRoute(pathname) && (status === "loading" || Boolean(session)));
 
   if (showProtectedLoader) {
