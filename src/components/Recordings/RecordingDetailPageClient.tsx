@@ -26,6 +26,7 @@ import { adminRecordingsApi, adminUsersApi } from "@/services/api";
 import { ApiError, Recording, User } from "@/types";
 import AttachmentsSection from "./AttachmentsSection";
 import RecordingDeleteConfirmDialog from "./RecordingDeleteConfirmDialog";
+import RecordingPlaybackCard from "./RecordingPlaybackCard";
 
 const USER_ROLE = "user";
 
@@ -361,19 +362,22 @@ export default function RecordingDetailPageClient({
             flexDirection: { xs: "column", md: "row" },
           }}
         >
-          <Box sx={{ minWidth: 0 }}>
+          <Stack spacing={2} sx={{ minWidth: 0, width: "100%", maxWidth: 520 }}>
             <Typography variant="h4" fontWeight={700}>
               {recording.title}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
               Manage the recording metadata, attachments, and assignment from one screen.
             </Typography>
-          </Box>
+            <RecordingPlaybackCard recordingId={recording.id} />
+          </Stack>
+
           <Button
             color="error"
             variant="outlined"
             startIcon={<DeleteOutlineIcon />}
             onClick={() => setIsDeleteDialogOpen(true)}
+            sx={{ alignSelf: { xs: "stretch", md: "flex-start" } }}
           >
             Delete Recording
           </Button>
