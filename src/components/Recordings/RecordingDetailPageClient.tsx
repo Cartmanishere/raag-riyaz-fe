@@ -355,15 +355,19 @@ export default function RecordingDetailPageClient({
         sx={{
           display: "grid",
           gap: 3,
-          gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 1.5fr) minmax(320px, 1fr)" },
-          alignItems: "start",
         }}
       >
+        {assignmentFeedback ? (
+          <Alert severity={assignmentFeedback.severity}>
+            {assignmentFeedback.message}
+          </Alert>
+        ) : null}
+
         <Box
           sx={{
             display: "grid",
             gap: 3,
-            gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) minmax(0, 1fr)" },
+            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) minmax(0, 1fr)" },
             alignItems: "start",
           }}
         >
@@ -440,12 +444,6 @@ export default function RecordingDetailPageClient({
             </CardContent>
           </Card>
         </Box>
-
-        {assignmentFeedback ? (
-          <Alert severity={assignmentFeedback.severity}>
-            {assignmentFeedback.message}
-          </Alert>
-        ) : null}
       </Box>
 
       <RecordingDeleteConfirmDialog
