@@ -18,10 +18,13 @@ import {
   AuthActorDto,
   AuthMeResponseDto,
   AuthResponseDto,
+  BatchAssignment,
+  BatchAssignmentDto,
   AuthSession,
   BatchStudent,
   BatchStudentDto,
   CreateAssignmentRequest,
+  CreateBatchAssignmentRequest,
   CreateRecordingRequest,
   CreateStudentBatchRequest,
   CreateUserRequest,
@@ -170,6 +173,18 @@ function mapAssignment(dto: AssignmentDto): Assignment {
     orgId: dto.org_id,
     recordingId: dto.recording_id,
     assignedToUserId: dto.assigned_to_user_id,
+    assignedByAdminId: dto.assigned_by_admin_id,
+    assignedAt: dto.assigned_at,
+  };
+}
+
+function mapBatchAssignment(dto: BatchAssignmentDto): BatchAssignment {
+  return {
+    id: dto.id,
+    orgId: dto.org_id,
+    recordingId: dto.recording_id,
+    batchId: dto.batch_id,
+    batchName: dto.batch_name,
     assignedByAdminId: dto.assigned_by_admin_id,
     assignedAt: dto.assigned_at,
   };
@@ -622,6 +637,18 @@ export const adminRecordingsApi = {
     });
 
     return mapAssignment(response.assignment);
+  },
+
+  async assignBatch(id: string, payload: CreateBatchAssignmentRequest) {
+    const response = await request<{ assignment: BatchAssignmentDto }>({
+      url: `/admin/recordings/${id}/assign-batch`,
+      method: "POST",
+      data: {
+        batch_id: payload.batchId,
+      },
+    });
+
+    return mapBatchAssignment(response.assignment);
   },
 
   async unassign(recordingId: string, userId: string): Promise<DeleteResult> {

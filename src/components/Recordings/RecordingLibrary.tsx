@@ -6,6 +6,7 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   FormControl,
   InputAdornment,
@@ -22,11 +23,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import UploadIcon from "@mui/icons-material/Upload";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import RecordingFormDialog, { RecordingFormValues } from "./RecordingFormDialog";
 import RecordingDeleteConfirmDialog from "./RecordingDeleteConfirmDialog";
+import BulkAssignRecordingsDialog, {
+  BulkAssignTarget,
+} from "./BulkAssignRecordingsDialog";
 import { adminRecordingsApi } from "@/services/api";
 import { ApiError, Recording } from "@/types";
 
@@ -48,6 +53,14 @@ export default function RecordingLibrary() {
   const [deleteTarget, setDeleteTarget] = React.useState<Recording | undefined>();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [selectedRecordingIds, setSelectedRecordingIds] = React.useState<string[]>([]);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = React.useState(false);
+  const [isBulkAssigning, setIsBulkAssigning] = React.useState(false);
+  const [assignError, setAssignError] = React.useState<string | null>(null);
+  const [assignFeedback, setAssignFeedback] = React.useState<{
+    severity: "success" | "warning" | "error";
+    message: string;
+  } | null>(null);
 
   const loadRecordings = React.useCallback(async () => {
     setIsLoading(true);
@@ -56,6 +69,11 @@ export default function RecordingLibrary() {
     try {
       const nextRecordings = await adminRecordingsApi.list();
       setRecordings(nextRecordings);
+      setSelectedRecordingIds((current) =>
+        current.filter((recordingId) =>
+          nextRecordings.some((recording) => recording.id === recordingId)
+        )
+      );
     } catch (err) {
       const apiError = err as ApiError;
       setError({
@@ -99,6 +117,46 @@ export default function RecordingLibrary() {
   const handleOpenAdd = () => {
     setSubmitError(null);
     setFormOpen(true);
+  };
+
+  const selectedRecordings = React.useMemo(
+    () => recordings.filter((recording) => selectedRecordingIds.includes(recording.id)),
+    [recordings, selectedRecordingIds]
+  );
+
+  const filteredRecordingIds = React.useMemo(
+    () => filtered.map((recording) => recording.id),
+    [filtered]
+  );
+
+  const selectedFilteredCount = React.useMemo(
+    () => filteredRecordingIds.filter((id) => selectedRecordingIds.includes(id)).length,
+    [filteredRecordingIds, selectedRecordingIds]
+  );
+
+  const areAllFilteredSelected =
+    filteredRecordingIds.length > 0 && selectedFilteredCount === filteredRecordingIds.length;
+  const isFilteredSelectionPartial =
+    selectedFilteredCount > 0 && selectedFilteredCount < filteredRecordingIds.length;
+
+  const toggleRecordingSelection = (recordingId: string) => {
+    setSelectedRecordingIds((current) =>
+      current.includes(recordingId)
+        ? current.filter((id) => id !== recordingId)
+        : [...current, recordingId]
+    );
+    setAssignFeedback(null);
+  };
+
+  const handleToggleSelectAllFiltered = () => {
+    setSelectedRecordingIds((current) => {
+      if (areAllFilteredSelected) {
+        return current.filter((id) => !filteredRecordingIds.includes(id));
+      }
+
+      return Array.from(new Set([...current, ...filteredRecordingIds]));
+    });
+    setAssignFeedback(null);
   };
 
   const handleCloseForm = () => {
@@ -174,12 +232,116 @@ export default function RecordingLibrary() {
       setRecordings((current) =>
         current.filter((recording) => recording.id !== deletedRecordingId)
       );
+      setSelectedRecordingIds((current) =>
+        current.filter((recordingId) => recordingId !== deletedRecordingId)
+      );
       setDeleteTarget(undefined);
     } catch (err) {
       const apiError = err as ApiError;
       setDeleteError(toErrorMessage(apiError, "Failed to delete recording."));
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleCloseAssignDialog = () => {
+    if (isBulkAssigning) {
+      return;
+    }
+
+    setIsAssignDialogOpen(false);
+    setAssignError(null);
+  };
+
+  const handleBulkAssign = async (target: BulkAssignTarget) => {
+    if (selectedRecordings.length === 0) {
+      return;
+    }
+
+    setIsBulkAssigning(true);
+    setAssignError(null);
+    setAssignFeedback(null);
+
+    try {
+      const results = await Promise.allSettled(
+        selectedRecordings.map(async (recording) => {
+          try {
+            if (target.type === "batch") {
+              await adminRecordingsApi.assignBatch(recording.id, {
+                batchId: target.targetId,
+              });
+            } else {
+              await adminRecordingsApi.assign(recording.id, {
+                assignedToUserId: target.targetId,
+              });
+            }
+
+            return { recordingId: recording.id, outcome: "success" as const };
+          } catch (error) {
+            const apiError = error as ApiError;
+            if (apiError.statusCode === 409) {
+              return { recordingId: recording.id, outcome: "conflict" as const };
+            }
+
+            throw apiError;
+          }
+        })
+      );
+
+      const successIds: string[] = [];
+      const conflictIds: string[] = [];
+      const failedIds: string[] = [];
+
+      results.forEach((result, index) => {
+        const recordingId = selectedRecordings[index]?.id;
+        if (!recordingId) {
+          return;
+        }
+
+        if (result.status === "fulfilled") {
+          if (result.value.outcome === "success") {
+            successIds.push(recordingId);
+          } else {
+            conflictIds.push(recordingId);
+          }
+          return;
+        }
+
+        failedIds.push(recordingId);
+      });
+
+      const successCount = successIds.length;
+      const conflictCount = conflictIds.length;
+      const failureCount = failedIds.length;
+
+      setAssignFeedback({
+        severity:
+          failureCount > 0 ? "error" : conflictCount > 0 ? "warning" : "success",
+        message: [
+          successCount > 0
+            ? `Assigned ${successCount} recording${successCount === 1 ? "" : "s"} to ${target.targetLabel}.`
+            : null,
+          conflictCount > 0 ? `${conflictCount} already assigned.` : null,
+          failureCount > 0 ? `${failureCount} failed.` : null,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      });
+
+      if (failureCount === 0) {
+        setSelectedRecordingIds((current) =>
+          current.filter((id) => !successIds.includes(id) && !conflictIds.includes(id))
+        );
+      } else {
+        setSelectedRecordingIds(failedIds);
+      }
+
+      setIsAssignDialogOpen(false);
+    } catch (error) {
+      const apiError = error as ApiError;
+      setAssignError(toErrorMessage(apiError, "Unable to assign the selected recordings."));
+    } finally {
+      setIsBulkAssigning(false);
     }
   };
 
@@ -219,6 +381,57 @@ export default function RecordingLibrary() {
           Upload Recording
         </Button>
       </Box>
+
+      {selectedRecordingIds.length > 0 ? (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
+            mb: 2,
+            px: 2,
+            py: 1.5,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Typography variant="body2" fontWeight={600}>
+            {selectedRecordingIds.length} recording
+            {selectedRecordingIds.length === 1 ? "" : "s"} selected
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            <Button
+              variant="contained"
+              startIcon={<AssignmentTurnedInIcon />}
+              onClick={() => {
+                setAssignError(null);
+                setIsAssignDialogOpen(true);
+              }}
+            >
+              Assign
+            </Button>
+            <Button
+              variant="text"
+              onClick={() => {
+                setSelectedRecordingIds([]);
+                setAssignFeedback(null);
+              }}
+            >
+              Clear Selection
+            </Button>
+          </Box>
+        </Box>
+      ) : null}
+
+      {assignFeedback ? (
+        <Alert severity={assignFeedback.severity} sx={{ mb: 2 }}>
+          {assignFeedback.message}
+        </Alert>
+      ) : null}
 
       {isLoading ? (
         <Box sx={{ py: 8, textAlign: "center" }}>
@@ -261,6 +474,14 @@ export default function RecordingLibrary() {
           <Table sx={{ minWidth: 960 }}>
             <TableHead>
               <TableRow>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={areAllFilteredSelected}
+                    indeterminate={isFilteredSelectionPartial}
+                    onChange={handleToggleSelectAllFiltered}
+                    inputProps={{ "aria-label": "Select all filtered recordings" }}
+                  />
+                </TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>
                   Actions
@@ -275,6 +496,18 @@ export default function RecordingLibrary() {
                   onClick={() => handleView(recording)}
                   sx={{ cursor: "pointer" }}
                 >
+                  <TableCell
+                    padding="checkbox"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedRecordingIds.includes(recording.id)}
+                      onChange={() => toggleRecordingSelection(recording.id)}
+                      inputProps={{ "aria-label": `Select ${recording.title}` }}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Typography variant="body2" fontWeight={600}>
                       {recording.title}
@@ -330,6 +563,17 @@ export default function RecordingLibrary() {
         onClose={handleCloseDelete}
         onConfirm={() => {
           void handleDelete();
+        }}
+      />
+
+      <BulkAssignRecordingsDialog
+        open={isAssignDialogOpen}
+        selectedCount={selectedRecordingIds.length}
+        isSubmitting={isBulkAssigning}
+        submitError={assignError}
+        onClose={handleCloseAssignDialog}
+        onAssign={(target) => {
+          void handleBulkAssign(target);
         }}
       />
     </Box>

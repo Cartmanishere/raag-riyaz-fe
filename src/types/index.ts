@@ -86,6 +86,16 @@ export interface AssignmentDto {
   assigned_at: string;
 }
 
+export interface BatchAssignmentDto {
+  id: string;
+  org_id: string;
+  recording_id: string;
+  batch_id: string;
+  batch_name: string;
+  assigned_by_admin_id: string;
+  assigned_at: string;
+}
+
 export interface DashboardAssignmentDto extends AssignmentDto {
   recording_title: string;
 }
@@ -199,6 +209,16 @@ export interface Assignment {
   assignedAt: string;
 }
 
+export interface BatchAssignment {
+  id: string;
+  orgId: string;
+  recordingId: string;
+  batchId: string;
+  batchName: string;
+  assignedByAdminId: string;
+  assignedAt: string;
+}
+
 export interface DashboardAssignment extends Assignment {
   recordingTitle: string;
 }
@@ -307,6 +327,10 @@ export interface UpdateRecordingRequest {
 
 export interface CreateAssignmentRequest {
   assignedToUserId: string;
+}
+
+export interface CreateBatchAssignmentRequest {
+  batchId: string;
 }
 
 export interface UploadRecordingAttachmentRequest {
