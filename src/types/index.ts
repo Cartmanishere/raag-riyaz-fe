@@ -118,6 +118,16 @@ export interface AdminUserRecordingAssignmentDto {
   recording: Omit<RecordingDto, "object_key">;
 }
 
+export interface AdminBatchRecordingAssignmentDto {
+  assignment_id: string;
+  recording_id: string;
+  batch_id: string;
+  batch_name: string;
+  assigned_by_admin_id: string;
+  assigned_at: string;
+  recording: Omit<RecordingDto, "object_key">;
+}
+
 export type RecordingAttachmentType = "image" | "pdf";
 
 export interface RecordingAttachmentDto {
@@ -236,6 +246,16 @@ export interface AssignedRecording {
 export interface AdminUserRecordingAssignment {
   assignmentId: string;
   assignedToUserId: string;
+  assignedByAdminId: string;
+  assignedAt: string;
+  recording: Omit<Recording, "objectKey">;
+}
+
+export interface AdminBatchRecordingAssignment {
+  assignmentId: string;
+  recordingId: string;
+  batchId: string;
+  batchName: string;
   assignedByAdminId: string;
   assignedAt: string;
   recording: Omit<Recording, "objectKey">;

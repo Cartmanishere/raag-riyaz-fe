@@ -6,6 +6,8 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import {
+  AdminBatchRecordingAssignment,
+  AdminBatchRecordingAssignmentDto,
   AdminUserRecordingAssignment,
   AdminUserRecordingAssignmentDto,
   ApiError,
@@ -152,6 +154,29 @@ function mapAdminUserRecordingAssignment(
   return {
     assignmentId: dto.assignment_id,
     assignedToUserId: dto.assigned_to_user_id,
+    assignedByAdminId: dto.assigned_by_admin_id,
+    assignedAt: dto.assigned_at,
+    recording: {
+      id: dto.recording.id,
+      title: dto.recording.title,
+      raag: dto.recording.raag ?? null,
+      taal: dto.recording.taal,
+      notes: dto.recording.notes,
+      mimeType: dto.recording.mime_type,
+      createdByAdminId: dto.recording.created_by_admin_id,
+      orgId: dto.recording.org_id,
+    },
+  };
+}
+
+function mapAdminBatchRecordingAssignment(
+  dto: AdminBatchRecordingAssignmentDto,
+): AdminBatchRecordingAssignment {
+  return {
+    assignmentId: dto.assignment_id,
+    recordingId: dto.recording_id,
+    batchId: dto.batch_id,
+    batchName: dto.batch_name,
     assignedByAdminId: dto.assigned_by_admin_id,
     assignedAt: dto.assigned_at,
     recording: {
@@ -529,6 +554,15 @@ export const adminStudentBatchesApi = {
     return response.students.map(mapBatchStudent);
   },
 
+  async listRecordings(id: string) {
+    const response = await request<{ recordings: AdminBatchRecordingAssignmentDto[] }>({
+      url: `/admin/student-batches/${id}/recordings`,
+      method: "GET",
+    });
+
+    return response.recordings.map(mapAdminBatchRecordingAssignment);
+  },
+
   async bulkAddStudents(id: string, payload: { userIds: string[] }) {
     const response = await request<UpdateBatchMembershipResultDto>({
       url: `/admin/student-batches/${id}/students/bulk-add`,
@@ -654,6 +688,15 @@ export const adminRecordingsApi = {
   async unassign(recordingId: string, userId: string): Promise<DeleteResult> {
     await request<void>({
       url: `/admin/recordings/${recordingId}/assign/${userId}`,
+      method: "DELETE",
+    });
+
+    return { success: true };
+  },
+
+  async unassignBatch(recordingId: string, batchId: string): Promise<DeleteResult> {
+    await request<void>({
+      url: `/admin/recordings/${recordingId}/assign-batch/${batchId}`,
       method: "DELETE",
     });
 

@@ -13,18 +13,25 @@ import {
   CardContent,
   CircularProgress,
   Stack,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   Typography,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
 import { deriveActorDisplayName } from "@/services/auth-session";
-import { adminStudentBatchesApi, adminUsersApi } from "@/services/api";
-import { ApiError, BatchStudent, StudentBatch, User } from "@/types";
+import { adminRecordingsApi, adminStudentBatchesApi, adminUsersApi } from "@/services/api";
+import {
+  AdminBatchRecordingAssignment,
+  ApiError,
+  BatchStudent,
+  StudentBatch,
+  User,
+} from "@/types";
 import AddStudentsDialog from "./AddStudentsDialog";
 
 const USER_ROLE = "user";
@@ -37,18 +44,34 @@ function getBatchStudentLabel(student: BatchStudent) {
   return student.displayName?.trim() || student.userId;
 }
 
+function formatAssignedAt(value: string) {
+  const assignedAt = new Date(value);
+
+  if (Number.isNaN(assignedAt.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(assignedAt);
+}
+
 interface BatchDetailPageClientProps {
   id: string;
 }
 
 export default function BatchDetailPageClient({ id }: BatchDetailPageClientProps) {
-  const router = useRouter();
+  const [activeTab, setActiveTab] = React.useState<"students" | "recordings">("students");
   const [batch, setBatch] = React.useState<StudentBatch | null>(null);
   const [students, setStudents] = React.useState<BatchStudent[]>([]);
+  const [recordings, setRecordings] = React.useState<AdminBatchRecordingAssignment[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<ApiError | null>(null);
   const [areStudentsLoading, setAreStudentsLoading] = React.useState(true);
   const [studentsError, setStudentsError] = React.useState<ApiError | null>(null);
+  const [areRecordingsLoading, setAreRecordingsLoading] = React.useState(true);
+  const [recordingsError, setRecordingsError] = React.useState<ApiError | null>(null);
   const [availableStudents, setAvailableStudents] = React.useState<User[]>([]);
   const [areAvailableStudentsLoading, setAreAvailableStudentsLoading] = React.useState(false);
   const [availableStudentsError, setAvailableStudentsError] = React.useState<string | null>(null);
@@ -56,7 +79,9 @@ export default function BatchDetailPageClient({ id }: BatchDetailPageClientProps
   const [addStudentsError, setAddStudentsError] = React.useState<string | null>(null);
   const [isAddingStudents, setIsAddingStudents] = React.useState(false);
   const [removingStudentId, setRemovingStudentId] = React.useState<string | null>(null);
+  const [unassigningRecordingId, setUnassigningRecordingId] = React.useState<string | null>(null);
   const [removeError, setRemoveError] = React.useState<string | null>(null);
+  const [unassignError, setUnassignError] = React.useState<string | null>(null);
 
   const loadBatch = React.useCallback(async () => {
     if (!id.trim()) {
@@ -126,6 +151,41 @@ export default function BatchDetailPageClient({ id }: BatchDetailPageClientProps
   React.useEffect(() => {
     void loadStudents();
   }, [loadStudents]);
+
+  const loadRecordings = React.useCallback(async () => {
+    if (!id.trim()) {
+      setRecordings([]);
+      setRecordingsError({
+        message: "Invalid batch ID.",
+        statusCode: 404,
+      });
+      setAreRecordingsLoading(false);
+      return;
+    }
+
+    setAreRecordingsLoading(true);
+    setRecordingsError(null);
+    setUnassignError(null);
+
+    try {
+      const nextRecordings = await adminStudentBatchesApi.listRecordings(id);
+      setRecordings(nextRecordings);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setRecordings([]);
+      setRecordingsError({
+        code: apiError?.code,
+        message: apiError?.message ?? "Failed to load batch recordings.",
+        statusCode: apiError?.statusCode ?? 500,
+      });
+    } finally {
+      setAreRecordingsLoading(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    void loadRecordings();
+  }, [loadRecordings]);
 
   const loadAvailableStudents = React.useCallback(async () => {
     setAreAvailableStudentsLoading(true);
@@ -202,6 +262,23 @@ export default function BatchDetailPageClient({ id }: BatchDetailPageClientProps
       setRemoveError(apiError?.message ?? "Failed to remove student from this batch.");
     } finally {
       setRemovingStudentId(null);
+    }
+  };
+
+  const handleUnassignRecording = async (assignment: AdminBatchRecordingAssignment) => {
+    setUnassigningRecordingId(assignment.assignmentId);
+    setUnassignError(null);
+
+    try {
+      await adminRecordingsApi.unassignBatch(assignment.recording.id, assignment.batchId);
+      setRecordings((current) =>
+        current.filter((item) => item.assignmentId !== assignment.assignmentId)
+      );
+    } catch (err) {
+      const apiError = err as ApiError;
+      setUnassignError(apiError?.message ?? "Failed to unassign recording from this batch.");
+    } finally {
+      setUnassigningRecordingId(null);
     }
   };
 
@@ -306,6 +383,9 @@ export default function BatchDetailPageClient({ id }: BatchDetailPageClientProps
               <Typography variant="body2" color="text.secondary">
                 Students: {students.length}
               </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Recordings: {recordings.length}
+              </Typography>
             </Stack>
           </Box>
 
@@ -323,84 +403,181 @@ export default function BatchDetailPageClient({ id }: BatchDetailPageClientProps
 
       <Card>
         <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
-            Students
-          </Typography>
-
-          {removeError ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {removeError}
-            </Alert>
-          ) : null}
-
-          {areStudentsLoading ? (
-            <Box sx={{ py: 4, textAlign: "center" }}>
-              <CircularProgress size={24} />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
-                Loading batch students...
-              </Typography>
-            </Box>
-          ) : studentsError ? (
-            <Stack spacing={1.5} sx={{ pt: 1 }}>
-              <Alert severity="error">{studentsError.message}</Alert>
-              <Box>
-                <Button variant="outlined" onClick={() => void loadStudents()}>
-                  Retry
-                </Button>
-              </Box>
-            </Stack>
-          ) : students.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              No students have been added to this batch yet.
-            </Typography>
-          ) : (
-            <TableContainer
-              sx={{
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 2,
-                overflowX: "auto",
-                mt: 1,
-              }}
+          <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_event, value: "students" | "recordings") => setActiveTab(value)}
             >
-              <Table sx={{ minWidth: 720 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>Student</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>User ID</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {students.map((student) => (
-                    <TableRow key={student.userId} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {getBatchStudentLabel(student)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>{student.userId}</TableCell>
-                      <TableCell align="right">
-                        <Button
-                          size="small"
-                          color="error"
-                          variant="text"
-                          startIcon={<DeleteOutlineIcon fontSize="small" />}
-                          onClick={() => {
-                            void handleRemoveStudent(student);
-                          }}
-                          disabled={removingStudentId === student.userId}
-                        >
-                          {removingStudentId === student.userId ? "Removing..." : "Remove"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+              <Tab label={`Students (${students.length})`} value="students" />
+              <Tab label={`Recordings (${recordings.length})`} value="recordings" />
+            </Tabs>
+          </Box>
+
+          {activeTab === "students" ? (
+            <>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                Students
+              </Typography>
+
+              {removeError ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {removeError}
+                </Alert>
+              ) : null}
+
+              {areStudentsLoading ? (
+                <Box sx={{ py: 4, textAlign: "center" }}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                    Loading batch students...
+                  </Typography>
+                </Box>
+              ) : studentsError ? (
+                <Stack spacing={1.5} sx={{ pt: 1 }}>
+                  <Alert severity="error">{studentsError.message}</Alert>
+                  <Box>
+                    <Button variant="outlined" onClick={() => void loadStudents()}>
+                      Retry
+                    </Button>
+                  </Box>
+                </Stack>
+              ) : students.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No students have been added to this batch yet.
+                </Typography>
+              ) : (
+                <TableContainer
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    overflowX: "auto",
+                    mt: 1,
+                  }}
+                >
+                  <Table sx={{ minWidth: 720 }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700 }}>Student</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>User ID</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>
+                          Actions
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {students.map((student) => (
+                        <TableRow key={student.userId} hover>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={600}>
+                              {getBatchStudentLabel(student)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>{student.userId}</TableCell>
+                          <TableCell align="right">
+                            <Button
+                              size="small"
+                              color="error"
+                              variant="text"
+                              startIcon={<DeleteOutlineIcon fontSize="small" />}
+                              onClick={() => {
+                                void handleRemoveStudent(student);
+                              }}
+                              disabled={removingStudentId === student.userId}
+                            >
+                              {removingStudentId === student.userId ? "Removing..." : "Remove"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </>
+          ) : (
+            <>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
+                Recordings
+              </Typography>
+
+              {unassignError ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {unassignError}
+                </Alert>
+              ) : null}
+
+              {areRecordingsLoading ? (
+                <Box sx={{ py: 4, textAlign: "center" }}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                    Loading batch recordings...
+                  </Typography>
+                </Box>
+              ) : recordingsError ? (
+                <Stack spacing={1.5} sx={{ pt: 1 }}>
+                  <Alert severity="error">{recordingsError.message}</Alert>
+                  <Box>
+                    <Button variant="outlined" onClick={() => void loadRecordings()}>
+                      Retry
+                    </Button>
+                  </Box>
+                </Stack>
+              ) : recordings.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No recordings have been assigned to this batch yet.
+                </Typography>
+              ) : (
+                <TableContainer
+                  sx={{
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    overflowX: "auto",
+                    mt: 1,
+                  }}
+                >
+                  <Table sx={{ minWidth: 720 }}>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700 }}>Title</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Assigned</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>
+                          Actions
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {recordings.map((assignment) => (
+                        <TableRow key={assignment.assignmentId} hover>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={600}>
+                              {assignment.recording.title}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>{formatAssignedAt(assignment.assignedAt)}</TableCell>
+                          <TableCell align="right">
+                            <Button
+                              size="small"
+                              color="error"
+                              variant="text"
+                              onClick={() => {
+                                void handleUnassignRecording(assignment);
+                              }}
+                              disabled={unassigningRecordingId === assignment.assignmentId}
+                            >
+                              {unassigningRecordingId === assignment.assignmentId
+                                ? "Unassigning..."
+                                : "Unassign"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
