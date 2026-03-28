@@ -10,23 +10,19 @@ import {
   Dialog,
   DialogContent,
   Divider,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
-import { deriveActorDisplayName } from "@/services/auth-session";
-import { adminRecordingsApi, adminUsersApi } from "@/services/api";
-import { ApiError, PlaybackInfo, Recording, User } from "@/types";
+import { adminRecordingsApi } from "@/services/api";
+import { ApiError, PlaybackInfo, Recording } from "@/types";
 import AttachmentsSection from "./AttachmentsSection";
-
-const USER_ROLE = "user";
+import BulkAssignRecordingsDialog, {
+  BulkAssignTarget,
+} from "./BulkAssignRecordingsDialog";
 
 function toErrorMessage(error: ApiError | null, fallback: string) {
   return error?.message ?? fallback;
@@ -43,12 +39,6 @@ function formatDateTime(value: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
-}
-
-function sortUsers(users: User[]) {
-  return [...users].sort((left, right) =>
-    deriveActorDisplayName(left).localeCompare(deriveActorDisplayName(right))
-  );
 }
 
 interface RecordingDetailDrawerProps {
@@ -71,13 +61,8 @@ export default function RecordingDetailDrawer({
   const [playbackError, setPlaybackError] = React.useState<string | null>(null);
   const playbackRetryCountRef = React.useRef(0);
   const playbackRequestIdRef = React.useRef(0);
-
-  const [assignees, setAssignees] = React.useState<User[]>([]);
-  const [isAssigneesLoading, setIsAssigneesLoading] = React.useState(false);
-  const [assigneesError, setAssigneesError] = React.useState<string | null>(null);
-  const [selectedAssigneeId, setSelectedAssigneeId] = React.useState("");
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = React.useState(false);
   const [isAssigning, setIsAssigning] = React.useState(false);
-  const assigneesRequestIdRef = React.useRef(0);
   const [assignmentFeedback, setAssignmentFeedback] = React.useState<{
     severity: "success" | "warning" | "error";
     message: string;
@@ -124,45 +109,6 @@ export default function RecordingDetailDrawer({
     [recording]
   );
 
-  const loadAssignees = React.useCallback(async () => {
-    const requestId = ++assigneesRequestIdRef.current;
-    setIsAssigneesLoading(true);
-    setAssigneesError(null);
-
-    try {
-      const users = await adminUsersApi.list();
-
-      if (requestId !== assigneesRequestIdRef.current) {
-        return;
-      }
-
-      const eligibleUsers = sortUsers(
-        users.filter((user) => user.role.toLowerCase() === USER_ROLE)
-      );
-      setAssignees(eligibleUsers);
-      setSelectedAssigneeId((current) =>
-        current && eligibleUsers.some((user) => user.id === current)
-          ? current
-          : eligibleUsers[0]?.id ?? ""
-      );
-    } catch (err) {
-      if (requestId !== assigneesRequestIdRef.current) {
-        return;
-      }
-
-      const apiError = err as ApiError;
-      setAssignees([]);
-      setSelectedAssigneeId("");
-      setAssigneesError(
-        toErrorMessage(apiError, "Unable to load users for assignment.")
-      );
-    } finally {
-      if (requestId === assigneesRequestIdRef.current) {
-        setIsAssigneesLoading(false);
-      }
-    }
-  }, []);
-
   React.useEffect(() => {
     if (!open || !recording) {
       return;
@@ -170,8 +116,7 @@ export default function RecordingDetailDrawer({
 
     setAssignmentFeedback(null);
     void loadPlayback({ resetRetryCount: true });
-    void loadAssignees();
-  }, [loadAssignees, loadPlayback, open, recording]);
+  }, [loadPlayback, open, recording]);
 
   const handlePlaybackRetry = () => {
     void loadPlayback({ resetRetryCount: true });
@@ -193,8 +138,8 @@ export default function RecordingDetailDrawer({
     void loadPlayback({ resetRetryCount: false });
   };
 
-  const handleAssign = async () => {
-    if (!recording || !selectedAssigneeId) {
+  const handleAssign = async (target: BulkAssignTarget) => {
+    if (!recording) {
       return;
     }
 
@@ -202,17 +147,18 @@ export default function RecordingDetailDrawer({
     setAssignmentFeedback(null);
 
     try {
-      const assignment = await adminRecordingsApi.assign(recording.id, {
-        assignedToUserId: selectedAssigneeId,
-      });
-      const assignedUser = assignees.find((user) => user.id === assignment.assignedToUserId);
+      if (target.type === "batch") {
+        await adminRecordingsApi.assignBatch(recording.id, {
+          batchId: target.targetId,
+        });
+      } else {
+        await adminRecordingsApi.assign(recording.id, {
+          assignedToUserId: target.targetId,
+        });
+      }
 
-      setAssignmentFeedback({
-        severity: "success",
-        message: assignedUser
-          ? `Assigned to ${deriveActorDisplayName(assignedUser)}.`
-          : "Recording assigned successfully.",
-      });
+      setAssignmentFeedback({ severity: "success", message: `Assigned to ${target.targetLabel}.` });
+      setIsAssignDialogOpen(false);
     } catch (err) {
       const apiError = err as ApiError;
       const isConflict = apiError?.statusCode === 409;
@@ -220,7 +166,7 @@ export default function RecordingDetailDrawer({
       setAssignmentFeedback({
         severity: isConflict ? "warning" : "error",
         message: isConflict
-          ? "This recording is already assigned to the selected user."
+          ? `This recording is already assigned to ${target.targetLabel}.`
           : toErrorMessage(apiError, "Unable to assign this recording."),
       });
     } finally {
@@ -373,60 +319,20 @@ export default function RecordingDetailDrawer({
             </Alert>
           ) : null}
 
-          {assigneesError ? (
-            <Stack spacing={1.5}>
-              <Alert severity="error">{assigneesError}</Alert>
-              <Box>
-                <Button variant="outlined" size="small" onClick={() => void loadAssignees()}>
-                  Retry Users
-                </Button>
-              </Box>
-            </Stack>
-          ) : isAssigneesLoading ? (
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <CircularProgress size={20} />
-              <Typography variant="body2" color="text.secondary">
-                Loading available users...
-              </Typography>
-            </Stack>
-          ) : assignees.length === 0 ? (
-            <Alert severity="info">
-              No student accounts are available for assignment.
-            </Alert>
-          ) : (
-            <Stack spacing={1.5}>
-              <FormControl size="small" fullWidth>
-                <InputLabel id="recording-assignee-label">Assign to</InputLabel>
-                <Select
-                  labelId="recording-assignee-label"
-                  value={selectedAssigneeId}
-                  label="Assign to"
-                  onChange={(event) => {
-                    setSelectedAssigneeId(event.target.value);
-                    setAssignmentFeedback(null);
-                  }}
-                  disabled={isAssigning}
-                >
-                  {assignees.map((user) => (
-                    <MenuItem key={user.id} value={user.id}>
-                      {deriveActorDisplayName(user)} ({user.email})
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+          <Typography variant="body2" color="text.secondary">
+            Open the same batch-or-student assignment flow used on the recordings list.
+          </Typography>
 
-              <Box>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => void handleAssign()}
-                  disabled={!selectedAssigneeId || isAssigning}
-                >
-                  {isAssigning ? "Assigning..." : "Assign Recording"}
-                </Button>
-              </Box>
-            </Stack>
-          )}
+          <Box>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => setIsAssignDialogOpen(true)}
+              disabled={isAssigning}
+            >
+              {isAssigning ? "Assigning..." : "Assign Recording"}
+            </Button>
+          </Box>
         </Box>
 
         <Divider />
@@ -458,6 +364,21 @@ export default function RecordingDetailDrawer({
           </Box>
         </Box>
       </DialogContent>
+
+      <BulkAssignRecordingsDialog
+        open={isAssignDialogOpen}
+        selectedCount={1}
+        isSubmitting={isAssigning}
+        submitError={null}
+        onClose={() => {
+          if (!isAssigning) {
+            setIsAssignDialogOpen(false);
+          }
+        }}
+        onAssign={(target) => {
+          void handleAssign(target);
+        }}
+      />
     </Dialog>
   );
 }

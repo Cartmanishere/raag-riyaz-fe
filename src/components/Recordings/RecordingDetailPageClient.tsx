@@ -13,22 +13,18 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import { deriveActorDisplayName } from "@/services/auth-session";
-import { adminRecordingsApi, adminUsersApi } from "@/services/api";
-import { ApiError, Recording, User } from "@/types";
+import { adminRecordingsApi } from "@/services/api";
+import { ApiError, Recording } from "@/types";
 import AttachmentsSection from "./AttachmentsSection";
+import BulkAssignRecordingsDialog, {
+  BulkAssignTarget,
+} from "./BulkAssignRecordingsDialog";
 import RecordingDeleteConfirmDialog from "./RecordingDeleteConfirmDialog";
 import RecordingPlaybackCard from "./RecordingPlaybackCard";
-
-const USER_ROLE = "user";
 
 interface RecordingDetailPageClientProps {
   id: string;
@@ -65,12 +61,6 @@ function isNotFoundError(error: ApiError | null) {
   return error?.statusCode === 404;
 }
 
-function sortUsers(users: User[]) {
-  return [...users].sort((left, right) =>
-    deriveActorDisplayName(left).localeCompare(deriveActorDisplayName(right))
-  );
-}
-
 export default function RecordingDetailPageClient({
   id,
 }: RecordingDetailPageClientProps) {
@@ -85,11 +75,7 @@ export default function RecordingDetailPageClient({
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-
-  const [assignees, setAssignees] = React.useState<User[]>([]);
-  const [isAssigneesLoading, setIsAssigneesLoading] = React.useState(true);
-  const [assigneesError, setAssigneesError] = React.useState<string | null>(null);
-  const [selectedAssigneeId, setSelectedAssigneeId] = React.useState("");
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = React.useState(false);
   const [isAssigning, setIsAssigning] = React.useState(false);
   const [assignmentFeedback, setAssignmentFeedback] = React.useState<{
     severity: "success" | "warning" | "error";
@@ -129,41 +115,9 @@ export default function RecordingDetailPageClient({
     }
   }, [id]);
 
-  const loadAssignees = React.useCallback(async () => {
-    setIsAssigneesLoading(true);
-    setAssigneesError(null);
-
-    try {
-      const users = await adminUsersApi.list();
-      const eligibleUsers = sortUsers(
-        users.filter((user) => user.role.toLowerCase() === USER_ROLE)
-      );
-
-      setAssignees(eligibleUsers);
-      setSelectedAssigneeId((current) =>
-        current && eligibleUsers.some((user) => user.id === current)
-          ? current
-          : eligibleUsers[0]?.id ?? ""
-      );
-    } catch (err) {
-      const apiError = err as ApiError;
-      setAssignees([]);
-      setSelectedAssigneeId("");
-      setAssigneesError(
-        toErrorMessage(apiError, "Unable to load users for assignment.")
-      );
-    } finally {
-      setIsAssigneesLoading(false);
-    }
-  }, []);
-
   React.useEffect(() => {
     void loadRecording();
   }, [loadRecording]);
-
-  React.useEffect(() => {
-    void loadAssignees();
-  }, [loadAssignees]);
 
   const isDirty = React.useMemo(() => {
     if (!recording) {
@@ -216,8 +170,8 @@ export default function RecordingDetailPageClient({
     }
   };
 
-  const handleAssign = async () => {
-    if (!recording || !selectedAssigneeId) {
+  const handleAssign = async (target: BulkAssignTarget) => {
+    if (!recording) {
       return;
     }
 
@@ -225,17 +179,18 @@ export default function RecordingDetailPageClient({
     setAssignmentFeedback(null);
 
     try {
-      const assignment = await adminRecordingsApi.assign(recording.id, {
-        assignedToUserId: selectedAssigneeId,
-      });
-      const assignedUser = assignees.find((user) => user.id === assignment.assignedToUserId);
+      if (target.type === "batch") {
+        await adminRecordingsApi.assignBatch(recording.id, {
+          batchId: target.targetId,
+        });
+      } else {
+        await adminRecordingsApi.assign(recording.id, {
+          assignedToUserId: target.targetId,
+        });
+      }
 
-      setAssignmentFeedback({
-        severity: "success",
-        message: assignedUser
-          ? `Assigned to ${deriveActorDisplayName(assignedUser)}.`
-          : "Recording assigned successfully.",
-      });
+      setAssignmentFeedback({ severity: "success", message: `Assigned to ${target.targetLabel}.` });
+      setIsAssignDialogOpen(false);
     } catch (err) {
       const apiError = err as ApiError;
       const isConflict = apiError?.statusCode === 409;
@@ -243,7 +198,7 @@ export default function RecordingDetailPageClient({
       setAssignmentFeedback({
         severity: isConflict ? "warning" : "error",
         message: isConflict
-          ? "This recording is already assigned to the selected student."
+          ? `This recording is already assigned to ${target.targetLabel}.`
           : toErrorMessage(apiError, "Unable to assign this recording."),
       });
     } finally {
@@ -372,15 +327,27 @@ export default function RecordingDetailPageClient({
             <RecordingPlaybackCard recordingId={recording.id} />
           </Stack>
 
-          <Button
-            color="error"
-            variant="outlined"
-            startIcon={<DeleteOutlineIcon />}
-            onClick={() => setIsDeleteDialogOpen(true)}
-            sx={{ alignSelf: { xs: "stretch", md: "flex-start" } }}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
+            sx={{ width: { xs: "100%", md: "auto" }, alignSelf: { xs: "stretch", md: "flex-start" } }}
           >
-            Delete Recording
-          </Button>
+            <Button
+              variant="contained"
+              onClick={() => setIsAssignDialogOpen(true)}
+              disabled={isAssigning}
+            >
+              {isAssigning ? "Assigning..." : "Assign Recording"}
+            </Button>
+            <Button
+              color="error"
+              variant="outlined"
+              startIcon={<DeleteOutlineIcon />}
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              Delete Recording
+            </Button>
+          </Stack>
         </CardContent>
       </Card>
 
@@ -392,7 +359,14 @@ export default function RecordingDetailPageClient({
           alignItems: "start",
         }}
       >
-        <Stack spacing={3}>
+        <Box
+          sx={{
+            display: "grid",
+            gap: 3,
+            gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) minmax(0, 1fr)" },
+            alignItems: "start",
+          }}
+        >
           <Card>
             <CardContent sx={{ display: "grid", gap: 2.5 }}>
               <Box>
@@ -465,105 +439,13 @@ export default function RecordingDetailPageClient({
               <AttachmentsSection recordingId={recording.id} />
             </CardContent>
           </Card>
-        </Stack>
+        </Box>
 
-        <Stack spacing={3}>
-          <Card>
-            <CardContent sx={{ display: "grid", gap: 2 }}>
-              <Box>
-                <Typography variant="h6" fontWeight={700}>
-                  Assignment
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  Assign this recording to a student from the same screen.
-                </Typography>
-              </Box>
-
-              {assignmentFeedback ? (
-                <Alert severity={assignmentFeedback.severity}>
-                  {assignmentFeedback.message}
-                </Alert>
-              ) : null}
-
-              {isAssigneesLoading ? (
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  <CircularProgress size={20} />
-                  <Typography variant="body2" color="text.secondary">
-                    Loading students...
-                  </Typography>
-                </Stack>
-              ) : assigneesError ? (
-                <Stack spacing={1}>
-                  <Alert severity="error">{assigneesError}</Alert>
-                  <Box>
-                    <Button variant="outlined" size="small" onClick={() => void loadAssignees()}>
-                      Retry
-                    </Button>
-                  </Box>
-                </Stack>
-              ) : assignees.length === 0 ? (
-                <Alert severity="info">
-                  No student accounts are available for assignment.
-                </Alert>
-              ) : (
-                <>
-                  <FormControl fullWidth>
-                    <InputLabel id="recording-assignee-label">Assign to</InputLabel>
-                    <Select
-                      labelId="recording-assignee-label"
-                      label="Assign to"
-                      value={selectedAssigneeId}
-                      onChange={(event) => setSelectedAssigneeId(event.target.value)}
-                      disabled={isAssigning}
-                    >
-                      {assignees.map((user) => (
-                        <MenuItem key={user.id} value={user.id}>
-                          {deriveActorDisplayName(user)}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <Button
-                    variant="contained"
-                    onClick={() => void handleAssign()}
-                    disabled={!selectedAssigneeId || isAssigning}
-                  >
-                    {isAssigning ? "Assigning..." : "Assign Recording"}
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent sx={{ display: "grid", gap: 1.5 }}>
-              <Typography variant="h6" fontWeight={700}>
-                System Info
-              </Typography>
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Recording ID
-                </Typography>
-                <Typography variant="body2">{recording.id}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Mime Type
-                </Typography>
-                <Typography variant="body2">{recording.mimeType}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary">
-                  Storage Key
-                </Typography>
-                <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
-                  {recording.objectKey}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Stack>
+        {assignmentFeedback ? (
+          <Alert severity={assignmentFeedback.severity}>
+            {assignmentFeedback.message}
+          </Alert>
+        ) : null}
       </Box>
 
       <RecordingDeleteConfirmDialog
@@ -579,6 +461,21 @@ export default function RecordingDetailPageClient({
         }}
         onConfirm={() => {
           void handleDelete();
+        }}
+      />
+
+      <BulkAssignRecordingsDialog
+        open={isAssignDialogOpen}
+        selectedCount={1}
+        isSubmitting={isAssigning}
+        submitError={null}
+        onClose={() => {
+          if (!isAssigning) {
+            setIsAssignDialogOpen(false);
+          }
+        }}
+        onAssign={(target) => {
+          void handleAssign(target);
         }}
       />
     </Box>
