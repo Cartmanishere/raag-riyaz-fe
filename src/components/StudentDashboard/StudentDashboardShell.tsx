@@ -44,7 +44,7 @@ export default function StudentDashboardShell({
       sx={{
         minHeight: "100vh",
         background:
-          "linear-gradient(180deg, rgba(55,125,205,0.08) 0%, rgba(55,125,205,0.02) 18%, #f7f9fc 48%, #f4f6f8 100%)",
+          "linear-gradient(180deg, rgba(192,80,96,0.06) 0%, rgba(192,80,96,0.02) 18%, #f5f0e8 48%, #eee6d8 100%)",
       }}
     >
       <AppBar
@@ -53,9 +53,9 @@ export default function StudentDashboardShell({
         elevation={0}
         sx={{
           backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255, 255, 255, 0.72)",
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+          borderBottom: "1px solid rgba(42,30,24,0.10)",
+          backgroundColor: "rgba(245,240,232,0.86)",
+          boxShadow: "0 10px 30px rgba(42,30,24,0.04)",
         }}
       >
         <Toolbar
@@ -77,7 +77,7 @@ export default function StudentDashboardShell({
               px: 1,
               py: 0.75,
               ml: -1,
-              "&:hover": { backgroundColor: "rgba(55,125,205,0.08)" },
+              "&:hover": { backgroundColor: "rgba(192,80,96,0.08)" },
             }}
           >
             <Box
@@ -89,7 +89,7 @@ export default function StudentDashboardShell({
                 placeItems: "center",
                 bgcolor: "primary.main",
                 color: "primary.contrastText",
-                boxShadow: "0 12px 30px rgba(55,125,205,0.22)",
+                boxShadow: "0 12px 30px rgba(192,80,96,0.22)",
                 flexShrink: 0,
               }}
             >
@@ -150,9 +150,9 @@ export default function StudentDashboardShell({
               onClick={() => void handleLogout()}
               disabled={isLoggingOut}
               sx={{
-                border: "1px solid rgba(15, 23, 42, 0.08)",
-                backgroundColor: "rgba(255, 255, 255, 0.92)",
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 1)" },
+                border: "1px solid rgba(42,30,24,0.10)",
+                backgroundColor: "rgba(245,240,232,0.92)",
+                "&:hover": { backgroundColor: "rgba(238,230,216,1)" },
               }}
             >
               <LogoutIcon fontSize="small" />

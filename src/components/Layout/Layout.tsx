@@ -45,7 +45,7 @@ export default function Layout({ children }: LayoutProps) {
           py: 2,
           px: 3,
           mt: "auto",
-          backgroundColor: (t) => t.palette.grey[100],
+          backgroundColor: "#eee6d8",
           textAlign: "center",
         }}
       >

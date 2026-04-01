@@ -4,16 +4,20 @@ const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#377dcdff",
+      main: "#c05060",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#ffffffff",
-      contrastText: "#377dcdff",
+      main: "#a06840",
+      contrastText: "#ffffff",
     },
     background: {
-      default: "#ffffffff",
-      paper: "#ffffff",
+      default: "#f5f0e8",
+      paper: "#eee6d8",
+    },
+    text: {
+      primary: "#2a1e18",
+      secondary: "#807060",
     },
   },
   typography: {
@@ -120,7 +124,18 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          backgroundColor: "#eee6d8",
+          boxShadow: "0 2px 8px rgba(42,30,24,0.08)",
+        },
+      },
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "#ddd0c0",
+        },
+        bar: {
+          backgroundColor: "#c05060",
         },
       },
     },

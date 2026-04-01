@@ -286,8 +286,8 @@ export default function StudentRecordingPracticeScreen({
             variant="outlined"
             sx={{
               borderRadius: 4,
-              borderColor: "rgba(55,125,205,0.14)",
-              backgroundColor: "rgba(255,255,255,0.95)",
+              borderColor: "rgba(42,30,24,0.10)",
+              backgroundColor: "rgba(238,230,216,0.95)",
             }}
           >
             <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
@@ -351,8 +351,8 @@ export default function StudentRecordingPracticeScreen({
               variant="outlined"
               sx={{
                 borderRadius: 4,
-                borderColor: "rgba(55,125,205,0.14)",
-                backgroundColor: "rgba(255,255,255,0.95)",
+                borderColor: "rgba(42,30,24,0.10)",
+                backgroundColor: "rgba(238,230,216,0.95)",
               }}
             >
               <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
@@ -377,8 +377,8 @@ export default function StudentRecordingPracticeScreen({
           sx={{
             borderRadius: 4,
             overflow: "hidden",
-            borderColor: "rgba(15, 23, 42, 0.08)",
-            backgroundColor: "rgba(255,255,255,0.95)",
+            borderColor: "rgba(42,30,24,0.10)",
+            backgroundColor: "rgba(238,230,216,0.95)",
           }}
         >
           <CardContent sx={{ p: { xs: 2.25, sm: 2.75 } }}>
@@ -450,7 +450,7 @@ export default function StudentRecordingPracticeScreen({
                       minHeight: { xs: 240, sm: 320 },
                       borderRadius: 3,
                       overflow: "hidden",
-                      backgroundColor: "grey.100",
+                      backgroundColor: "#e0d0b8",
                       border: "1px solid",
                       borderColor: "divider",
                     }}
@@ -461,7 +461,7 @@ export default function StudentRecordingPracticeScreen({
                           direction="row"
                           spacing={1.25}
                           alignItems="center"
-                          sx={{ px: 2, py: 1.5, bgcolor: "rgba(255,255,255,0.9)" }}
+                          sx={{ px: 2, py: 1.5, bgcolor: "rgba(238,230,216,0.9)" }}
                         >
                           <PictureAsPdfOutlinedIcon sx={{ color: "error.main" }} />
                           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -510,7 +510,7 @@ export default function StudentRecordingPracticeScreen({
                           alignItems: "center",
                           justifyContent: "center",
                           p: 1.5,
-                          backgroundColor: "rgba(255,255,255,0.72)",
+                          backgroundColor: "rgba(224,208,184,0.72)",
                         }}
                         onClick={() => handleOpenImagePreview(activeAttachment)}
                       >
@@ -591,7 +591,7 @@ export default function StudentRecordingPracticeScreen({
         <DialogContent
           sx={{
             p: 0,
-            bgcolor: "#0f172a",
+            bgcolor: "#1a0f0c",
             position: "relative",
             overflow: "auto",
           }}
@@ -612,7 +612,7 @@ export default function StudentRecordingPracticeScreen({
               }
               sx={{
                 color: "#fff",
-                bgcolor: "rgba(15, 23, 42, 0.54)",
+                bgcolor: "rgba(42,30,24,0.65)",
               }}
               aria-label="Rotate image right"
             >
@@ -627,7 +627,7 @@ export default function StudentRecordingPracticeScreen({
               right: 12,
               zIndex: 1,
               color: "#fff",
-              bgcolor: "rgba(15, 23, 42, 0.54)",
+              bgcolor: "rgba(42,30,24,0.65)",
             }}
           >
             <CloseIcon />

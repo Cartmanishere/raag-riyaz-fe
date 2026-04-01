@@ -72,11 +72,11 @@ export default function StudentPracticeScreen() {
         sx={{
           p: { xs: 2.5, sm: 3.5 },
           borderRadius: 4,
-          color: "#10243f",
+          color: "text.primary",
           background:
-            "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(240,246,255,0.94) 100%)",
-          border: "1px solid rgba(55,125,205,0.12)",
-          boxShadow: "0 24px 60px rgba(15, 23, 42, 0.06)",
+            "linear-gradient(135deg, rgba(245,240,232,0.98) 0%, rgba(238,230,216,0.94) 100%)",
+          border: "1px solid rgba(192,80,96,0.12)",
+          boxShadow: "0 24px 60px rgba(42,30,24,0.06)",
         }}
       >
         <Stack spacing={1.25}>
@@ -119,8 +119,8 @@ export default function StudentPracticeScreen() {
           sx={{
             borderRadius: 4,
             p: 2,
-            borderColor: "rgba(15, 23, 42, 0.08)",
-            backgroundColor: "rgba(255,255,255,0.88)",
+            borderColor: "rgba(42,30,24,0.10)",
+            backgroundColor: "rgba(238,230,216,0.88)",
           }}
         >
           <CardContent sx={{ py: 5, textAlign: "center" }}>
@@ -142,9 +142,9 @@ export default function StudentPracticeScreen() {
               sx={{
                 borderRadius: 4,
                 overflow: "hidden",
-                borderColor: "rgba(15, 23, 42, 0.08)",
-                boxShadow: "0 10px 24px rgba(15, 23, 42, 0.04)",
-                backgroundColor: "rgba(255,255,255,0.94)",
+                borderColor: "rgba(42,30,24,0.10)",
+                boxShadow: "0 10px 24px rgba(42,30,24,0.04)",
+                backgroundColor: "rgba(238,230,216,0.94)",
               }}
             >
               <CardContent sx={{ p: { xs: 2, sm: 2.75 } }}>

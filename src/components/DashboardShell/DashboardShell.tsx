@@ -82,7 +82,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         flexDirection: "column",
         height: "100%",
         background:
-          "linear-gradient(180deg, rgba(245,247,250,0.98) 0%, rgba(238,241,245,0.96) 100%)",
+          "linear-gradient(180deg, rgba(245,240,232,0.98) 0%, rgba(238,230,216,0.96) 100%)",
       }}
     >
       {/* Drawer header */}
@@ -104,7 +104,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
             placeItems: "center",
             bgcolor: "primary.main",
             color: "primary.contrastText",
-            boxShadow: "0 14px 28px rgba(55,125,205,0.22)",
+            boxShadow: "0 14px 28px rgba(192,80,96,0.22)",
           }}
         >
           <MusicNoteIcon fontSize="small" />
@@ -137,17 +137,17 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                   px: 2.5,
                   borderRadius: 0,
                   "&.Mui-selected": {
-                    backgroundColor: "rgba(55,125,205,0.12)",
+                    backgroundColor: "rgba(192,80,96,0.12)",
                     color: "text.primary",
                     borderRight: "3px solid",
                     borderColor: "primary.main",
                     "& .MuiListItemIcon-root": {
                       color: "primary.main",
                     },
-                    "&:hover": { backgroundColor: "rgba(55,125,205,0.16)" },
+                    "&:hover": { backgroundColor: "rgba(192,80,96,0.16)" },
                   },
                   "&:hover": {
-                    backgroundColor: "rgba(55,125,205,0.08)",
+                    backgroundColor: "rgba(192,80,96,0.08)",
                   },
                 }}
               >
@@ -173,7 +173,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         display: "flex",
         minHeight: "100vh",
         background:
-          "linear-gradient(180deg, rgba(247,249,252,0.98) 0%, rgba(252,253,255,0.98) 28%, #ffffff 100%)",
+          "linear-gradient(180deg, rgba(245,240,232,0.98) 0%, rgba(248,244,238,0.98) 28%, #f5f0e8 100%)",
       }}
     >
       <AppBar
@@ -184,9 +184,9 @@ export default function DashboardShell({ children }: DashboardShellProps) {
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
           ml: { md: `${DRAWER_WIDTH}px` },
           backdropFilter: "blur(18px)",
-          borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
-          backgroundColor: "rgba(255, 255, 255, 0.86)",
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.04)",
+          borderBottom: "1px solid rgba(42,30,24,0.10)",
+          backgroundColor: "rgba(245,240,232,0.92)",
+          boxShadow: "0 10px 30px rgba(42,30,24,0.04)",
         }}
       >
         <Toolbar
@@ -203,9 +203,9 @@ export default function DashboardShell({ children }: DashboardShellProps) {
               size="medium"
               sx={{
                 display: { md: "none" },
-                border: "1px solid rgba(15, 23, 42, 0.08)",
-                backgroundColor: "rgba(255, 255, 255, 0.92)",
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 1)" },
+                border: "1px solid rgba(42,30,24,0.10)",
+                backgroundColor: "rgba(245,240,232,0.92)",
+                "&:hover": { backgroundColor: "rgba(238,230,216,1)" },
               }}
             >
               <MenuIcon />
@@ -230,7 +230,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                 borderRadius: 999,
                 px: 1,
                 py: 0.75,
-                "&:hover": { backgroundColor: "rgba(55,125,205,0.08)" },
+                "&:hover": { backgroundColor: "rgba(192,80,96,0.08)" },
               }}
             >
               <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" }, minWidth: 0 }}>
@@ -253,7 +253,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                   height: 40,
                   fontSize: 14,
                   fontWeight: 700,
-                  boxShadow: "0 10px 24px rgba(55,125,205,0.18)",
+                  boxShadow: "0 10px 24px rgba(192,80,96,0.18)",
                 }}
               >
                 {initials}
@@ -264,9 +264,9 @@ export default function DashboardShell({ children }: DashboardShellProps) {
               onClick={() => void handleLogout()}
               disabled={isLoggingOut}
               sx={{
-                border: "1px solid rgba(15, 23, 42, 0.08)",
-                backgroundColor: "rgba(255, 255, 255, 0.92)",
-                "&:hover": { backgroundColor: "rgba(255, 255, 255, 1)" },
+                border: "1px solid rgba(42,30,24,0.10)",
+                backgroundColor: "rgba(245,240,232,0.92)",
+                "&:hover": { backgroundColor: "rgba(238,230,216,1)" },
               }}
             >
               <LogoutIcon fontSize="small" />
@@ -289,10 +289,10 @@ export default function DashboardShell({ children }: DashboardShellProps) {
             left: 0,
             width: DRAWER_WIDTH,
             height: "100vh",
-            borderRight: "1px solid rgba(15, 23, 42, 0.08)",
-            backgroundColor: "rgba(243, 246, 249, 0.94)",
+            borderRight: "1px solid rgba(42,30,24,0.10)",
+            backgroundColor: "rgba(238,230,216,0.94)",
             backdropFilter: "blur(18px)",
-            boxShadow: "inset -1px 0 0 rgba(255,255,255,0.45)",
+            boxShadow: "inset -1px 0 0 rgba(245,240,232,0.6)",
           }}
         >
           {drawerContent}

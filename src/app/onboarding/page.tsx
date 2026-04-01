@@ -95,7 +95,7 @@ export default function OnboardingPage() {
         alignItems: "center",
         justifyContent: "center",
         background:
-          "linear-gradient(180deg, rgba(55,125,205,0.08) 0%, rgba(55,125,205,0.02) 35%, #f7f9fc 100%)",
+          "linear-gradient(180deg, rgba(192,80,96,0.06) 0%, rgba(192,80,96,0.02) 35%, #f5f0e8 100%)",
         px: 2,
       }}
     >
@@ -104,7 +104,7 @@ export default function OnboardingPage() {
           width: "100%",
           maxWidth: 560,
           borderRadius: 4,
-          boxShadow: "0 16px 48px rgba(15, 23, 42, 0.08)",
+          boxShadow: "0 16px 48px rgba(42,30,24,0.08)",
         }}
       >
         <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
@@ -128,7 +128,7 @@ export default function OnboardingPage() {
               px: 2,
               py: 1.5,
               borderRadius: 3,
-              backgroundColor: "rgba(55,125,205,0.06)",
+              backgroundColor: "rgba(160,104,64,0.07)",
             }}
           >
             <Typography variant="caption" color="text.secondary" display="block">
