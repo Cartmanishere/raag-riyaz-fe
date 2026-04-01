@@ -131,7 +131,16 @@ export default function LoginPage() {
 
           <Divider sx={{ mb: 3 }} />
 
-          <Box sx={{ mb: 3 }}>
+          <Box
+            sx={{
+              mb: 3,
+              backgroundColor: "#f5e8d8",
+              border: "1px solid #ddd0bb",
+              borderRadius: 2,
+              py: 1.5,
+              px: 2,
+            }}
+          >
             <GoogleSignInButton
               onCredential={handleGoogleCredential}
               onError={setError}
