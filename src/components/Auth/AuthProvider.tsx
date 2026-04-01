@@ -3,14 +3,19 @@
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Box, CircularProgress } from "@mui/material";
-import { AuthActor, AuthSession } from "@/types";
+import { AuthActor, AuthOnboardingState, AuthSession } from "@/types";
 import {
+  clearOnboardingSnapshot,
   clearSessionSnapshot,
   deriveActorDisplayName,
   deriveActorInitials,
+  getOnboardingSnapshot,
   getSessionSnapshot,
+  hydrateOnboardingFromStorage,
   hydrateSessionFromStorage,
+  setOnboardingSnapshot,
   setSessionSnapshot,
+  subscribeToOnboarding,
   subscribeToSession,
 } from "@/services/auth-session";
 import {
@@ -19,25 +24,34 @@ import {
   isAdminActor,
   isStudentActor,
   login,
+  loginWithGoogle,
   logout,
 } from "@/services/auth";
 
-type AuthStatus = "loading" | "authenticated" | "unauthenticated";
+type AuthStatus =
+  | "loading"
+  | "authenticated"
+  | "onboarding_needed"
+  | "unauthenticated";
 
 interface AuthContextValue {
   actor: AuthActor | null;
+  onboarding: AuthOnboardingState | null;
   session: AuthSession | null;
   status: AuthStatus;
   isTeacher: boolean;
   isStudent: boolean;
   loginWithPassword: typeof login;
+  loginWithGoogle: typeof loginWithGoogle;
   logout: typeof logout;
+  clearOnboarding: typeof clearOnboardingSnapshot;
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
 const TEACHER_ROUTE_PREFIX = "/teacher-dashboard";
 const STUDENT_ROUTE_PREFIX = "/student-dashboard";
+const ONBOARDING_ROUTE = "/onboarding";
 
 function shouldProtectTeacherRoute(pathname: string) {
   return pathname.startsWith(TEACHER_ROUTE_PREFIX);
@@ -49,6 +63,10 @@ function shouldProtectStudentRoute(pathname: string) {
 
 function isLoginRoute(pathname: string) {
   return pathname === "/login";
+}
+
+function isOnboardingRoute(pathname: string) {
+  return pathname === ONBOARDING_ROUTE;
 }
 
 function isAuthorizedForPath(
@@ -93,45 +111,62 @@ export default function AuthProvider({
     getSessionSnapshot,
     () => null
   );
+  const onboarding = React.useSyncExternalStore(
+    subscribeToOnboarding,
+    getOnboardingSnapshot,
+    () => null
+  );
 
   React.useEffect(() => {
     let active = true;
 
     async function restoreSession() {
       const storedSession = hydrateSessionFromStorage();
+      const storedOnboarding = hydrateOnboardingFromStorage();
 
-      if (!storedSession) {
-        if (active) {
-          setStatus("unauthenticated");
-          setBootstrapped(true);
+      if (storedSession) {
+        try {
+          const actor = await fetchCurrentActor();
+
+          if (!active) {
+            return;
+          }
+
+          const nextSession = getSessionSnapshot();
+          if (nextSession) {
+            setSessionSnapshot({
+              ...nextSession,
+              actor,
+            });
+          }
+
+          if (storedOnboarding) {
+            clearOnboardingSnapshot();
+          }
+
+          setStatus("authenticated");
+          return;
+        } catch {
+          if (!active) {
+            return;
+          }
+
+          clearSessionSnapshot();
+        } finally {
+          if (active) {
+            setBootstrapped(true);
+          }
         }
-        return;
       }
 
-      try {
-        const actor = await fetchCurrentActor();
-
-        if (!active) {
-          return;
+      if (active) {
+        if (storedOnboarding) {
+          setOnboardingSnapshot(storedOnboarding);
+          setStatus("onboarding_needed");
+        } else {
+          setStatus("unauthenticated");
         }
 
-        const nextSession = getSessionSnapshot();
-        if (nextSession) {
-          setSessionSnapshot({
-            ...nextSession,
-            actor,
-          });
-        }
-
-        setStatus("authenticated");
-      } catch {
-        if (!active) {
-          return;
-        }
-
-        clearSessionSnapshot();
-        setStatus("unauthenticated");
-      } finally {
         if (active) {
           setBootstrapped(true);
         }
@@ -155,8 +190,13 @@ export default function AuthProvider({
       return;
     }
 
+    if (onboarding) {
+      setStatus("onboarding_needed");
+      return;
+    }
+
     setStatus("unauthenticated");
-  }, [bootstrapped, session]);
+  }, [bootstrapped, onboarding, session]);
 
   React.useEffect(() => {
     if (!bootstrapped) {
@@ -165,13 +205,9 @@ export default function AuthProvider({
 
     const isTeacherRoute = shouldProtectTeacherRoute(pathname);
     const isStudentRoute = shouldProtectStudentRoute(pathname);
+    const isPendingRoute = isOnboardingRoute(pathname);
 
-    if (isTeacherRoute || isStudentRoute) {
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-
+    if (session) {
       if (isTeacherRoute && !isAdminActor(session.actor.role)) {
         router.replace(getDefaultRouteForRole(session.actor.role));
         return;
@@ -182,35 +218,58 @@ export default function AuthProvider({
         return;
       }
 
+      if (isLoginRoute(pathname) || isPendingRoute) {
+        router.replace(getDefaultRouteForRole(session.actor.role));
+      }
+
       return;
     }
 
-    if (isLoginRoute(pathname) && session) {
-      router.replace(getDefaultRouteForRole(session.actor.role));
+    if (onboarding) {
+      if (!isPendingRoute) {
+        router.replace(ONBOARDING_ROUTE);
+      }
+      return;
     }
-  }, [bootstrapped, pathname, router, session]);
+
+    if (isPendingRoute) {
+      router.replace("/login");
+      return;
+    }
+
+    if (isTeacherRoute || isStudentRoute) {
+      router.replace("/login");
+    }
+  }, [bootstrapped, onboarding, pathname, router, session]);
 
   const contextValue = React.useMemo<AuthContextValue>(
     () => ({
       actor: session?.actor ?? null,
+      onboarding,
       session,
       status,
       isTeacher: Boolean(session && isAdminActor(session.actor.role)),
       isStudent: Boolean(session && isStudentActor(session.actor.role)),
       loginWithPassword: login,
+      loginWithGoogle,
       logout,
+      clearOnboarding: clearOnboardingSnapshot,
     }),
-    [session, status]
+    [onboarding, session, status]
   );
 
   const isProtectedRoute =
     shouldProtectTeacherRoute(pathname) || shouldProtectStudentRoute(pathname);
+  const pendingRoute = isOnboardingRoute(pathname);
   const isAuthorized = isAuthorizedForPath(pathname, session?.actor);
 
   const showProtectedLoader =
     !bootstrapped ||
     (isProtectedRoute && (!session || status === "loading" || !isAuthorized)) ||
-    (isLoginRoute(pathname) && (status === "loading" || Boolean(session)));
+    (isLoginRoute(pathname) &&
+      (status === "loading" || Boolean(session) || Boolean(onboarding))) ||
+    (pendingRoute &&
+      (status === "loading" || Boolean(session) || (!session && !onboarding)));
 
   if (showProtectedLoader) {
     return (

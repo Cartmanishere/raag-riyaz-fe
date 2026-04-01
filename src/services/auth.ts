@@ -1,10 +1,12 @@
 "use client";
 
-import { LoginRequest } from "@/types";
+import { AuthFlowResult, GoogleLoginRequest, LoginRequest } from "@/types";
 import { adminUsersApi, authApi } from "@/services/api";
 import {
+  clearOnboardingSnapshot,
   clearSessionSnapshot,
   getSessionSnapshot,
+  setOnboardingSnapshot,
   setSessionSnapshot,
 } from "@/services/auth-session";
 
@@ -54,6 +56,7 @@ async function enrichActorProfile(baseActor?: Awaited<ReturnType<typeof authApi.
 
 export async function login(credentials: LoginRequest) {
   const session = await authApi.login(credentials);
+  clearOnboardingSnapshot();
   setSessionSnapshot(session);
 
   const actor = await enrichActorProfile(session.actor);
@@ -70,6 +73,40 @@ export async function login(credentials: LoginRequest) {
   }
 
   return session;
+}
+
+export async function loginWithGoogle(
+  payload: GoogleLoginRequest,
+): Promise<AuthFlowResult> {
+  const result = await authApi.loginWithGoogle(payload);
+
+  if (result.status === "onboarding_needed") {
+    clearSessionSnapshot();
+    setOnboardingSnapshot(result.onboarding);
+    return result;
+  }
+
+  clearOnboardingSnapshot();
+  setSessionSnapshot(result.session);
+
+  const actor = await enrichActorProfile(result.session.actor);
+  const currentSession = getSessionSnapshot();
+
+  if (!currentSession) {
+    return result;
+  }
+
+  const nextSession = {
+    ...currentSession,
+    actor,
+  };
+
+  setSessionSnapshot(nextSession);
+
+  return {
+    status: "authenticated",
+    session: nextSession,
+  };
 }
 
 export async function fetchCurrentActor() {
@@ -96,6 +133,7 @@ export async function logout() {
       });
     }
   } finally {
+    clearOnboardingSnapshot();
     clearSessionSnapshot();
   }
 }

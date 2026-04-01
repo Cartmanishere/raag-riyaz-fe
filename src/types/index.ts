@@ -33,6 +33,18 @@ export interface AuthResponseDto {
   actor: AuthActorDto;
 }
 
+export interface GoogleAuthRequestDto {
+  id_token: string;
+}
+
+export interface AuthOnboardingResponseDto {
+  status: "onboarding_needed";
+  user_id: string;
+  email: string;
+  message: string;
+  next_step: string;
+}
+
 export interface AuthMeResponseDto {
   actor: AuthActorDto;
 }
@@ -170,6 +182,24 @@ export interface AuthSession {
   actor: AuthActor;
 }
 
+export interface AuthOnboardingState {
+  status: "onboarding_needed";
+  userId: string;
+  email: string;
+  message: string;
+  nextStep: string;
+}
+
+export type AuthFlowResult =
+  | {
+      status: "authenticated";
+      session: AuthSession;
+    }
+  | {
+      status: "onboarding_needed";
+      onboarding: AuthOnboardingState;
+    };
+
 export interface User {
   id: string;
   email: string;
@@ -296,6 +326,10 @@ export interface DashboardSummary {
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface GoogleLoginRequest {
+  idToken: string;
 }
 
 export interface RefreshRequest {

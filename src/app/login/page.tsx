@@ -20,23 +20,29 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { ApiError } from "@/types";
 import { useAuth } from "@/components/Auth/AuthProvider";
+import GoogleSignInButton from "@/components/Auth/GoogleSignInButton";
+import { getGoogleAuthErrorMessage } from "@/services/auth-errors";
 import { getDefaultRouteForRole } from "@/services/auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { loginWithPassword, session, status } = useAuth();
+  const { loginWithGoogle, loginWithPassword, onboarding, session, status } = useAuth();
   const [showPassword, setShowPassword] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = React.useState(false);
   const [form, setForm] = React.useState({ email: "", password: "" });
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
-    if (!session) {
+    if (session) {
+      router.replace(getDefaultRouteForRole(session.actor.role));
       return;
     }
 
-    router.replace(getDefaultRouteForRole(session.actor.role));
-  }, [router, session]);
+    if (onboarding) {
+      router.replace("/onboarding");
+    }
+  }, [onboarding, router, session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +60,29 @@ export default function LoginPage() {
     }
   };
 
-  if (status === "loading" || session) {
+  const handleGoogleCredential = async (credential: string) => {
+    setError("");
+    setIsGoogleSubmitting(true);
+
+    try {
+      const result = await loginWithGoogle({ idToken: credential });
+
+      if (result.status === "authenticated") {
+        router.replace(getDefaultRouteForRole(result.session.actor.role));
+        return;
+      }
+
+      router.replace("/onboarding");
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(getGoogleAuthErrorMessage(apiError));
+      throw caughtError;
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  };
+
+  if (status === "loading" || session || onboarding) {
     return (
       <Box
         sx={{
@@ -102,6 +130,22 @@ export default function LoginPage() {
           </Box>
 
           <Divider sx={{ mb: 3 }} />
+
+          <Box sx={{ mb: 3 }}>
+            <GoogleSignInButton
+              onCredential={handleGoogleCredential}
+              onError={setError}
+              disabled={isSubmitting || isGoogleSubmitting}
+            />
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+            <Divider sx={{ flex: 1 }} />
+            <Typography variant="caption" color="text.secondary">
+              or continue with email
+            </Typography>
+            <Divider sx={{ flex: 1 }} />
+          </Box>
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
             <TextField

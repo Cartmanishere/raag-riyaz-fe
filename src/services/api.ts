@@ -18,7 +18,10 @@ import {
   AssignmentDto,
   AuthActor,
   AuthActorDto,
+  AuthFlowResult,
   AuthMeResponseDto,
+  AuthOnboardingResponseDto,
+  AuthOnboardingState,
   AuthResponseDto,
   BatchAssignment,
   BatchAssignmentDto,
@@ -34,6 +37,8 @@ import {
   DashboardAssignmentDto,
   DashboardSummary,
   DeleteResult,
+  GoogleAuthRequestDto,
+  GoogleLoginRequest,
   LoginRequest,
   LogoutRequest,
   PlaybackInfo,
@@ -93,6 +98,16 @@ function mapSession(dto: AuthResponseDto): AuthSession {
     tokenType: dto.token_type,
     expiresIn: dto.expires_in,
     actor: mapActor(dto.actor),
+  };
+}
+
+function mapOnboarding(dto: AuthOnboardingResponseDto): AuthOnboardingState {
+  return {
+    status: dto.status,
+    userId: dto.user_id,
+    email: dto.email,
+    message: dto.message,
+    nextStep: dto.next_step,
   };
 }
 
@@ -280,7 +295,7 @@ function normalizeApiError(error: unknown): ApiError {
 }
 
 function isAuthLifecycleRequest(url?: string) {
-  return ["/auth/login", "/auth/refresh", "/auth/logout"].some(
+  return ["/auth/login", "/auth/google", "/auth/refresh", "/auth/logout"].some(
     (path) => url?.endsWith(path)
   );
 }
@@ -397,6 +412,29 @@ export const authApi = {
     });
 
     return mapSession(response);
+  },
+
+  async loginWithGoogle(payload: GoogleLoginRequest): Promise<AuthFlowResult> {
+    const response = await request<AuthResponseDto | AuthOnboardingResponseDto>({
+      url: "/auth/google",
+      method: "POST",
+      data: {
+        id_token: payload.idToken,
+      } satisfies GoogleAuthRequestDto,
+      skipAuthRefresh: true,
+    });
+
+    if ("access_token" in response) {
+      return {
+        status: "authenticated",
+        session: mapSession(response),
+      };
+    }
+
+    return {
+      status: "onboarding_needed",
+      onboarding: mapOnboarding(response),
+    };
   },
 
   async refresh(payload: RefreshRequest) {
