@@ -88,6 +88,7 @@ function mapActor(dto: AuthActorDto): AuthActor {
     email: dto.email,
     orgId: dto.org_id,
     role: dto.role,
+    avatarUrl: dto.avatar_url ?? null,
   };
 }
 

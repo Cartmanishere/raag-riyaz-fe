@@ -244,6 +244,8 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                 ) : null}
               </Box>
               <Avatar
+                src={actor?.avatarUrl ?? undefined}
+                alt={displayName || actor?.email || "Teacher"}
                 sx={{
                   bgcolor: "primary.main",
                   color: "primary.contrastText",

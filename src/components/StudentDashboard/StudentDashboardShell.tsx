@@ -133,6 +133,8 @@ export default function StudentDashboardShell({
             </Box>
 
             <Avatar
+              src={actor?.avatarUrl ?? undefined}
+              alt={displayName || actor?.email || "Student"}
               sx={{
                 bgcolor: "primary.main",
                 color: "primary.contrastText",

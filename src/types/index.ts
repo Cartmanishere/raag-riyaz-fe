@@ -23,6 +23,7 @@ export interface AuthActorDto {
   email: string;
   org_id: string;
   role: string;
+  avatar_url?: string | null;
 }
 
 export interface AuthResponseDto {
@@ -169,6 +170,7 @@ export interface AuthActor {
   email: string;
   orgId: string;
   role: string;
+  avatarUrl?: string | null;
   displayName?: string | null;
   phone?: string | null;
   status?: string;

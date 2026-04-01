@@ -76,6 +76,8 @@ export default function ProfilePage() {
               }}
             >
               <Avatar
+                src={actor?.avatarUrl ?? undefined}
+                alt={displayName || actor?.email || "Teacher"}
                 sx={{
                   width: 96,
                   height: 96,
