@@ -40,6 +40,7 @@ jobs:
       - name: Build static site
         env:
           NEXT_PUBLIC_API_BASE_URL: https://stg-raag-riyaz-api.kanha.dev
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
           NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: npm run build
 
