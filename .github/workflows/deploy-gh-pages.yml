@@ -42,6 +42,7 @@ jobs:
           NEXT_PUBLIC_API_BASE_URL: https://stg-raag-riyaz-api.kanha.dev
           NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
           NEXT_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          NEXT_PUBLIC_BASE_DOMAIN: kanha.dev
         run: npm run build
 
       - name: Disable Jekyll processing
