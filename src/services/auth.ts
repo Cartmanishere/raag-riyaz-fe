@@ -82,7 +82,10 @@ export async function loginWithGoogle(
 
   if (result.status === "onboarding_needed") {
     clearSessionSnapshot();
-    setOnboardingSnapshot(result.onboarding);
+    setOnboardingSnapshot({
+      ...result.onboarding,
+      orgSlug: result.onboarding.orgSlug ?? payload.orgSlug,
+    });
     return result;
   }
 

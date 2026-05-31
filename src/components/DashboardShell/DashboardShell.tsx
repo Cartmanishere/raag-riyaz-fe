@@ -26,6 +26,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useActorDisplay, useAuth } from "@/components/Auth/AuthProvider";
+import { useOrganization } from "@/hooks/use-organization";
 
 const DRAWER_WIDTH = 240;
 
@@ -57,6 +58,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
   const router = useRouter();
   const { actor, logout } = useAuth();
   const { displayName, initials } = useActorDisplay();
+  const orgName = useOrganization();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const currentSection = React.useMemo(
@@ -111,7 +113,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         </Box>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle1" fontWeight={700} noWrap>
-            Raag Riyaz
+            {orgName || "Raag Riyaz"}
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap>
             Teacher workspace

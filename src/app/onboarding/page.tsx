@@ -42,7 +42,10 @@ export default function OnboardingPage() {
     setIsRetrying(true);
 
     try {
-      const result = await loginWithGoogle({ idToken: credential });
+      const result = await loginWithGoogle({
+        idToken: credential,
+        orgSlug: onboarding?.orgSlug ?? "",
+      });
 
       if (result.status === "authenticated") {
         router.replace(getDefaultRouteForRole(result.session.actor.role));

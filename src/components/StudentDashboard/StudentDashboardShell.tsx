@@ -15,6 +15,7 @@ import {
 import LogoutIcon from "@mui/icons-material/Logout";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import { useActorDisplay, useAuth } from "@/components/Auth/AuthProvider";
+import { useOrganization } from "@/hooks/use-organization";
 
 interface StudentDashboardShellProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ export default function StudentDashboardShell({
   const router = useRouter();
   const { actor, logout } = useAuth();
   const { displayName, initials } = useActorDisplay();
+  const orgName = useOrganization();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const handleLogout = async () => {
@@ -98,7 +100,7 @@ export default function StudentDashboardShell({
 
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="h6" fontWeight={700} noWrap>
-                Raag Riyaz
+                {orgName || "Raag Riyaz"}
               </Typography>
               <Typography variant="body2" color="text.secondary" noWrap>
                 Student practice

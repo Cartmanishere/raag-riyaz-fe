@@ -41,6 +41,8 @@ import {
   GoogleLoginRequest,
   LoginRequest,
   LogoutRequest,
+  Organization,
+  OrganizationDto,
   PlaybackInfo,
   PlaybackResponseDto,
   RecordingAttachment,
@@ -109,6 +111,7 @@ function mapOnboarding(dto: AuthOnboardingResponseDto): AuthOnboardingState {
     email: dto.email,
     message: dto.message,
     nextStep: dto.next_step,
+    orgSlug: dto.org_slug,
   };
 }
 
@@ -278,6 +281,17 @@ function mapPlaybackInfo(dto: PlaybackResponseDto): PlaybackInfo {
   };
 }
 
+function mapOrganization(dto: OrganizationDto): Organization {
+  return {
+    id: dto.id,
+    name: dto.name,
+    slug: dto.slug,
+    branding: dto.branding,
+    createdAt: dto.created_at,
+    updatedAt: dto.updated_at,
+  };
+}
+
 function normalizeApiError(error: unknown): ApiError {
   const axiosError = error as AxiosError<ApiErrorPayload>;
   const statusCode = axiosError.response?.status ?? 500;
@@ -408,7 +422,11 @@ export const authApi = {
     const response = await request<AuthResponseDto>({
       url: "/auth/login",
       method: "POST",
-      data: credentials,
+      data: {
+        email: credentials.email,
+        password: credentials.password,
+        org_slug: credentials.orgSlug,
+      },
       skipAuthRefresh: true,
     });
 
@@ -421,6 +439,7 @@ export const authApi = {
       method: "POST",
       data: {
         id_token: payload.idToken,
+        org_slug: payload.orgSlug,
       } satisfies GoogleAuthRequestDto,
       skipAuthRefresh: true,
     });
@@ -469,6 +488,18 @@ export const authApi = {
     });
 
     return mapActor(response.actor);
+  },
+};
+
+export const organizationApi = {
+  async getBySlug(slug: string) {
+    const response = await request<{ organization: OrganizationDto }>({
+      url: `/organization?slug=${encodeURIComponent(slug)}`,
+      method: "GET",
+      skipAuthRefresh: true,
+    });
+
+    return mapOrganization(response.organization);
   },
 };
 

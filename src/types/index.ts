@@ -36,6 +36,7 @@ export interface AuthResponseDto {
 
 export interface GoogleAuthRequestDto {
   id_token: string;
+  org_slug: string;
 }
 
 export interface AuthOnboardingResponseDto {
@@ -44,6 +45,7 @@ export interface AuthOnboardingResponseDto {
   email: string;
   message: string;
   next_step: string;
+  org_slug?: string;
 }
 
 export interface AuthMeResponseDto {
@@ -190,6 +192,7 @@ export interface AuthOnboardingState {
   email: string;
   message: string;
   nextStep: string;
+  orgSlug?: string;
 }
 
 export type AuthFlowResult =
@@ -325,13 +328,33 @@ export interface DashboardSummary {
   recentAssignments: DashboardAssignment[];
 }
 
+export interface OrganizationDto {
+  id: string;
+  name: string;
+  slug: string;
+  branding: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  branding: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
+  orgSlug: string;
 }
 
 export interface GoogleLoginRequest {
   idToken: string;
+  orgSlug: string;
 }
 
 export interface RefreshRequest {
