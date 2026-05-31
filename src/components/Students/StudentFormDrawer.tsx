@@ -11,8 +11,6 @@ import {
   IconButton,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
@@ -47,10 +45,6 @@ const empty: StudentFormValues = {
 };
 
 type FormErrors = Partial<Record<keyof StudentFormValues, string>>;
-
-function formatStatusLabel(status: StudentStatus) {
-  return status === "active" ? "Active" : "Inactive";
-}
 
 function getInitialFormValues(mode: "add" | "edit", student?: User): StudentFormValues {
   if (mode === "edit" && student) {
@@ -209,37 +203,6 @@ export default function StudentFormDrawer({
           disabled={isSaving}
         />
 
-        <Box>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
-            Status
-          </Typography>
-          <ToggleButtonGroup
-            exclusive
-            value={form.status}
-            onChange={(_, value: StudentStatus | null) => {
-              if (value) {
-                setForm((current) => ({ ...current, status: value }));
-              }
-            }}
-            size="small"
-            disabled={isSaving}
-            sx={{
-              "& .MuiToggleButton-root": {
-                px: 3,
-                textTransform: "none",
-                fontWeight: 600,
-                "&.Mui-selected": {
-                  backgroundColor: "primary.main",
-                  color: "primary.contrastText",
-                  "&:hover": { backgroundColor: "primary.dark" },
-                },
-              },
-            }}
-          >
-            <ToggleButton value="active">{formatStatusLabel("active")}</ToggleButton>
-            <ToggleButton value="inactive">{formatStatusLabel("inactive")}</ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
       </DialogContent>
 
       <Divider />
