@@ -182,6 +182,15 @@ export default function RecordingLibrary() {
     setDeleteError(null);
   };
 
+  // Browsers report .mp4 as video/mp4, but the server expects audio/mp4
+  // for audio-only MP4 files (e.g. WhatsApp voice notes).
+  const normalizeForServerMimeType = (file: File): string => {
+    if (file.type === "video/mp4" && /\.mp4$/i.test(file.name)) {
+      return "audio/mp4";
+    }
+    return file.type || "application/octet-stream";
+  };
+
   const handleSave = async (values: RecordingFormValues) => {
     setIsSaving(true);
     setSubmitError(null);
@@ -197,7 +206,7 @@ export default function RecordingLibrary() {
         raag: values.raag.trim() || null,
         taal: values.taal.trim() || null,
         notes: values.notes.trim() || null,
-        mimeType: values.file.type || "application/octet-stream",
+        mimeType: normalizeForServerMimeType(values.file),
         file: values.file,
       });
 

@@ -44,14 +44,23 @@ const empty: RecordingFormValues = {
 };
 
 const AUDIO_FILE_ACCEPT =
-  ".mp3,.wav,.m4a,.aac,.ogg,.oga,.flac,audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/ogg,audio/flac,audio/*";
+  ".mp3,.wav,.m4a,.mp4,.aac,.ogg,.oga,.flac,audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/ogg,audio/flac,video/mp4,audio/*";
 
 function isAudioFile(file: File) {
   if (file.type.startsWith("audio/")) {
     return true;
   }
 
-  return /\.(mp3|wav|m4a|aac|ogg|oga|flac)$/i.test(file.name);
+  // Browsers report .mp4 as video/mp4, but audio-only MP4s (e.g. WhatsApp
+  // voice notes) are common. Treat .mp4 as a valid audio file.
+  if (
+    file.type === "video/mp4" ||
+    /\.(mp3|wav|m4a|aac|ogg|oga|flac|mp4)$/i.test(file.name)
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 export default function RecordingFormDialog({
