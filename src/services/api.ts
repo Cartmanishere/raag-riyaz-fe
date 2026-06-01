@@ -573,6 +573,15 @@ export const adminUsersApi = {
 
     return mapUser(response.user);
   },
+
+  async delete(id: string): Promise<DeleteResult> {
+    await request<void>({
+      url: `/admin/users/${id}`,
+      method: "DELETE",
+    });
+
+    return { success: true };
+  },
 };
 
 export const adminStudentBatchesApi = {

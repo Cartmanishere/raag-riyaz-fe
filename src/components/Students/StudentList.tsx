@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Alert,
   Box,
@@ -25,6 +26,7 @@ import { deriveActorDisplayName } from "@/services/auth-session";
 import { adminUsersApi } from "@/services/api";
 import { ApiError, User } from "@/types";
 import StudentFormDrawer, { StudentFormValues } from "./StudentFormDrawer";
+import DeleteUserConfirmDialog from "./DeleteUserConfirmDialog";
 
 const USER_ROLE = "user";
 
@@ -43,6 +45,10 @@ export default function StudentList() {
   const [selectedStudent, setSelectedStudent] = React.useState<User | undefined>();
   const [isSaving, setIsSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [studentToDelete, setStudentToDelete] = React.useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
   const loadStudents = React.useCallback(async () => {
     setIsLoading(true);
@@ -89,6 +95,38 @@ export default function StudentList() {
     setIsDrawerOpen(false);
     setSelectedStudent(undefined);
     setSubmitError(null);
+  };
+
+  const handleOpenDelete = (student: User) => {
+    setStudentToDelete(student);
+    setDeleteError(null);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDelete = () => {
+    if (isDeleting) return;
+    setDeleteDialogOpen(false);
+    setStudentToDelete(null);
+    setDeleteError(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!studentToDelete) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await adminUsersApi.delete(studentToDelete.id);
+      setStudents((current) => current.filter((s) => s.id !== studentToDelete.id));
+      setDeleteDialogOpen(false);
+      setStudentToDelete(null);
+    } catch (err) {
+      const apiError = err as ApiError;
+      setDeleteError(apiError?.message ?? "Failed to delete student.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSave = async (values: StudentFormValues) => {
@@ -257,6 +295,18 @@ export default function StudentList() {
                     >
                       Edit
                     </Button>
+                    <Button
+                      size="small"
+                      variant="text"
+                      color="error"
+                      startIcon={<DeleteIcon fontSize="small" />}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleOpenDelete(student);
+                      }}
+                    >
+                      Delete
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -274,6 +324,15 @@ export default function StudentList() {
         onClose={handleCloseDrawer}
         onSave={(values) => {
           void handleSave(values);
+        }}
+      />
+      <DeleteUserConfirmDialog
+        open={deleteDialogOpen}
+        studentName={studentToDelete ? deriveActorDisplayName(studentToDelete) : ""}
+        isDeleting={isDeleting}
+        onClose={handleCloseDelete}
+        onConfirm={() => {
+          void handleConfirmDelete();
         }}
       />
     </Box>
