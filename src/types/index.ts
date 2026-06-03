@@ -365,6 +365,26 @@ export interface LogoutRequest {
   refreshToken: string;
 }
 
+export interface ForgotPasswordRequest {
+  orgSlug: string;
+  email: string;
+}
+
+export interface ForgotPasswordRequestDto {
+  org_slug: string;
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
+export interface ResetPasswordRequestDto {
+  token: string;
+  password: string;
+}
+
 export interface CreateUserRequest {
   email: string;
   password: string;

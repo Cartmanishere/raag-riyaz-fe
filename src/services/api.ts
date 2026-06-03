@@ -310,7 +310,7 @@ function normalizeApiError(error: unknown): ApiError {
 }
 
 function isAuthLifecycleRequest(url?: string) {
-  return ["/auth/login", "/auth/google", "/auth/refresh", "/auth/logout"].some(
+  return ["/auth/login", "/auth/google", "/auth/refresh", "/auth/logout", "/auth/forgot-password", "/auth/reset-password"].some(
     (path) => url?.endsWith(path)
   );
 }
@@ -488,6 +488,30 @@ export const authApi = {
     });
 
     return mapActor(response.actor);
+  },
+
+  async forgotPassword(payload: { orgSlug: string; email: string }) {
+    return request<{ message: string }>({
+      url: "/auth/forgot-password",
+      method: "POST",
+      data: {
+        org_slug: payload.orgSlug,
+        email: payload.email,
+      },
+      skipAuthRefresh: true,
+    });
+  },
+
+  async resetPassword(payload: { token: string; password: string }) {
+    return request<{ message: string }>({
+      url: "/auth/reset-password",
+      method: "POST",
+      data: {
+        token: payload.token,
+        password: payload.password,
+      },
+      skipAuthRefresh: true,
+    });
   },
 };
 

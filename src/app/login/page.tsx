@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Alert,
@@ -342,14 +343,18 @@ export default function LoginPage() {
                   }}
                 />
 
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  display="block"
-                  sx={{ mb: 2 }}
-                >
-                  Password reset is not available in this frontend yet.
-                </Typography>
+                <Box sx={{ textAlign: "right", mb: 2 }}>
+                  <Link
+                    href="/forgot-password"
+                    style={{
+                      fontSize: "0.875rem",
+                      color: "#807060",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Forgot password?
+                  </Link>
+                </Box>
 
                 {error && (
                   <Alert severity="error" sx={{ mb: 2 }}>
