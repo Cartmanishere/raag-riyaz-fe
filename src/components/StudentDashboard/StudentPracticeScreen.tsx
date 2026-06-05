@@ -16,9 +16,7 @@ import {
 import AlbumIcon from "@mui/icons-material/Album";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import QueueMusicRoundedIcon from "@mui/icons-material/QueueMusicRounded";
-import { deriveActorDisplayName } from "@/services/auth-session";
 import { userRecordingsApi } from "@/services/api";
-import { useAuth } from "@/components/Auth/AuthProvider";
 import { ApiError, AssignedRecording } from "@/types";
 
 function formatAssignedAt(value: string) {
@@ -35,7 +33,6 @@ function formatAssignedAt(value: string) {
 
 export default function StudentPracticeScreen() {
   const router = useRouter();
-  const { actor } = useAuth();
   const [recordings, setRecordings] = React.useState<AssignedRecording[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<ApiError | null>(null);
@@ -64,32 +61,8 @@ export default function StudentPracticeScreen() {
     void loadRecordings();
   }, [loadRecordings]);
 
-  const studentName = actor ? deriveActorDisplayName(actor) : "Student";
-
   return (
     <Stack spacing={3.5}>
-      <Box
-        sx={{
-          p: { xs: 2.5, sm: 3.5 },
-          borderRadius: 4,
-          color: "text.primary",
-          background:
-            "linear-gradient(135deg, rgba(245,240,232,0.98) 0%, rgba(238,230,216,0.94) 100%)",
-          border: "1px solid rgba(192,80,96,0.12)",
-          boxShadow: "0 24px 60px rgba(42,30,24,0.06)",
-        }}
-      >
-        <Stack spacing={1.25}>
-          <Typography variant="overline" sx={{ letterSpacing: "0.08em", color: "primary.main" }}>
-            Daily practice
-          </Typography>
-          <Typography variant="h4">Welcome back, {studentName}.</Typography>
-          <Typography variant="body1" color="text.secondary">
-            Open one recording when you are ready to practice. Notes and attachments stay with that session.
-          </Typography>
-        </Stack>
-      </Box>
-
       <Stack spacing={1.25}>
         <Typography variant="h5">Assigned practice</Typography>
         <Typography variant="body2" color="text.secondary">
