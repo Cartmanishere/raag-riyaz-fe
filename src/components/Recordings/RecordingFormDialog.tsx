@@ -15,8 +15,10 @@ import {
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
-import { Recording } from "@/types";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import { Recording, RecordingAttachmentType } from "@/types";
 
 export interface RecordingFormValues {
   title: string;
@@ -24,6 +26,17 @@ export interface RecordingFormValues {
   taal: string;
   notes: string;
   file: File | null;
+  attachments: File[];
+}
+
+export function inferAttachmentType(file: File): RecordingAttachmentType | null {
+  if (file.type.startsWith("image/")) {
+    return "image";
+  }
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+    return "pdf";
+  }
+  return null;
 }
 
 interface RecordingFormDialogProps {
@@ -31,6 +44,7 @@ interface RecordingFormDialogProps {
   mode: "add" | "edit";
   recording?: Recording;
   isSaving: boolean;
+  isUploadingAttachments?: boolean;
   submitError: string | null;
   onClose: () => void;
   onSave: (values: RecordingFormValues) => void;
@@ -44,10 +58,14 @@ const empty: RecordingFormValues = {
   taal: "",
   notes: "",
   file: null,
+  attachments: [],
 };
 
 const AUDIO_FILE_ACCEPT =
   ".mp3,.wav,.m4a,.mp4,.aac,.ogg,.oga,.flac,audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/mp4,audio/aac,audio/ogg,audio/flac,video/mp4,audio/*";
+
+const ATTACHMENT_FILE_ACCEPT = "image/*,application/pdf";
+const MAX_IMAGE_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 function isAudioFile(file: File) {
   if (file.type.startsWith("audio/")) {
@@ -73,6 +91,7 @@ export default function RecordingFormDialog({
   mode,
   recording,
   isSaving,
+  isUploadingAttachments = false,
   submitError,
   onClose,
   onSave,
@@ -84,6 +103,7 @@ export default function RecordingFormDialog({
     Partial<Record<keyof RecordingFormValues, string>>
   >({});
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const attachmentInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (open) {
@@ -94,6 +114,7 @@ export default function RecordingFormDialog({
           taal: recording.taal ?? "",
           notes: recording.notes ?? "",
           file: null,
+          attachments: [],
         });
       } else {
         setForm(empty);
@@ -127,6 +148,22 @@ export default function RecordingFormDialog({
     setErrors((current) => ({ ...current, file: undefined }));
   };
 
+  const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files ?? []);
+    const valid = selectedFiles.filter(
+      (f) => inferAttachmentType(f) !== null && !(inferAttachmentType(f) === "image" && f.size > MAX_IMAGE_FILE_SIZE_BYTES)
+    );
+    setForm((f) => ({ ...f, attachments: [...f.attachments, ...valid] }));
+    setErrors((current) => ({ ...current, attachments: undefined }));
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setForm((f) => ({
+      ...f,
+      attachments: f.attachments.filter((_, i) => i !== index),
+    }));
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle
@@ -142,6 +179,9 @@ export default function RecordingFormDialog({
 
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: "16px !important" }}>
         {submitError ? <Alert severity="error">{submitError}</Alert> : null}
+        {isUploadingAttachments ? (
+          <Alert severity="info">Recording saved. Uploading attachments...</Alert>
+        ) : null}
 
         <TextField
           label="Title"
@@ -244,6 +284,94 @@ export default function RecordingFormDialog({
             ) : null}
           </Box>
         ) : null}
+
+        {mode === "add" ? (
+          <Box>
+            <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+              Attachments (optional)
+            </Typography>
+            <Box
+              onClick={() => {
+                if (!isSaving) {
+                  attachmentInputRef.current?.click();
+                }
+              }}
+              sx={{
+                border: "2px dashed",
+                borderColor: "divider",
+                borderRadius: 2,
+                py: 2,
+                textAlign: "center",
+                cursor: isSaving ? "default" : "pointer",
+                backgroundColor: isSaving ? "action.disabledBackground" : "transparent",
+                "&:hover": isSaving
+                  ? undefined
+                  : { borderColor: "primary.main", backgroundColor: "action.hover" },
+              }}
+            >
+              <AddPhotoAlternateIcon sx={{ color: "text.disabled", mb: 0.5 }} />
+              <Typography variant="body2" color="text.secondary">
+                Add images or PDFs
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                Images up to 5 MB each
+              </Typography>
+              <input
+                ref={attachmentInputRef}
+                type="file"
+                multiple
+                accept={ATTACHMENT_FILE_ACCEPT}
+                hidden
+                onChange={handleAttachmentChange}
+                disabled={isSaving}
+              />
+            </Box>
+
+            {form.attachments.map((file, index) => (
+              <Box
+                key={`${file.name}-${index}`}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  mt: 1,
+                  px: 1.5,
+                  py: 0.75,
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  backgroundColor: "background.paper",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                  {inferAttachmentType(file) === "pdf" ? (
+                    <PictureAsPdfIcon fontSize="small" sx={{ color: "error.main", flexShrink: 0 }} />
+                  ) : (
+                    <AddPhotoAlternateIcon fontSize="small" sx={{ color: "text.secondary", flexShrink: 0 }} />
+                  )}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {file.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+                    {file.size < 1024 * 1024
+                      ? `${Math.round(file.size / 1024)} KB`
+                      : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}
+                  </Typography>
+                </Box>
+                <IconButton size="small" onClick={() => handleRemoveAttachment(index)} disabled={isSaving}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            ))}
+          </Box>
+        ) : null}
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -251,7 +379,13 @@ export default function RecordingFormDialog({
           Cancel
         </Button>
         <Button variant="contained" onClick={handleSave} disabled={isSaving}>
-          {isSaving ? "Saving..." : mode === "add" ? "Upload Recording" : "Save Recording"}
+          {isUploadingAttachments
+            ? "Uploading attachments..."
+            : isSaving
+              ? "Saving..."
+              : mode === "add"
+                ? "Upload Recording"
+                : "Save Recording"}
         </Button>
       </DialogActions>
     </Dialog>

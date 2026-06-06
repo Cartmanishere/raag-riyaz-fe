@@ -27,7 +27,10 @@ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import UploadIcon from "@mui/icons-material/Upload";
 import SearchIcon from "@mui/icons-material/Search";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import RecordingFormDialog, { RecordingFormValues } from "./RecordingFormDialog";
+import RecordingFormDialog, {
+  RecordingFormValues,
+  inferAttachmentType,
+} from "./RecordingFormDialog";
 import RecordingDeleteConfirmDialog from "./RecordingDeleteConfirmDialog";
 import BulkAssignRecordingsDialog, {
   BulkAssignTarget,
@@ -52,6 +55,7 @@ export default function RecordingLibrary() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
+  const [isUploadingAttachments, setIsUploadingAttachments] = React.useState(false);
   const [deleteTarget, setDeleteTarget] = React.useState<Recording | undefined>();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
@@ -223,8 +227,35 @@ export default function RecordingLibrary() {
         onUploadProgress,
       });
 
-      setRecordings((current) => [createdRecording, ...current]);
+      // Upload attachments one by one after recording creation succeeds
+      const attachmentFiles = values.attachments ?? [];
 
+      if (attachmentFiles.length > 0) {
+        setUploadProgress(null);
+        setIsUploadingAttachments(true);
+
+        for (const file of attachmentFiles) {
+          const type = inferAttachmentType(file);
+          if (!type) {
+            continue;
+          }
+
+          try {
+            await adminRecordingsApi.uploadAttachment(createdRecording.id, {
+              file,
+              type,
+              mimeType: file.type || undefined,
+            });
+          } catch {
+            // Attachment upload failed silently; the recording is already created.
+            // The user can add attachments later on the recording detail page.
+          }
+        }
+
+        setIsUploadingAttachments(false);
+      }
+
+      setRecordings((current) => [createdRecording, ...current]);
       setFormOpen(false);
     } catch (err) {
       const apiError = err as ApiError;
@@ -237,6 +268,7 @@ export default function RecordingLibrary() {
     } finally {
       setIsSaving(false);
       setUploadProgress(null);
+      setIsUploadingAttachments(false);
     }
   };
 
@@ -571,6 +603,7 @@ export default function RecordingLibrary() {
         open={formOpen}
         mode="add"
         isSaving={isSaving}
+        isUploadingAttachments={isUploadingAttachments}
         submitError={submitError}
         onClose={handleCloseForm}
         onSave={(values) => {
