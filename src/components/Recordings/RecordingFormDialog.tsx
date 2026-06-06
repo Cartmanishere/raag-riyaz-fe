@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  LinearProgress,
   TextField,
   Typography,
 } from "@mui/material";
@@ -33,6 +34,8 @@ interface RecordingFormDialogProps {
   submitError: string | null;
   onClose: () => void;
   onSave: (values: RecordingFormValues) => void;
+  uploadProgress?: number | null;
+  uploadProgressThresholdBytes?: number;
 }
 
 const empty: RecordingFormValues = {
@@ -63,6 +66,8 @@ function isAudioFile(file: File) {
   return false;
 }
 
+const DEFAULT_UPLOAD_PROGRESS_THRESHOLD_BYTES = 5 * 1024 * 1024; // 5 MB
+
 export default function RecordingFormDialog({
   open,
   mode,
@@ -71,6 +76,8 @@ export default function RecordingFormDialog({
   submitError,
   onClose,
   onSave,
+  uploadProgress,
+  uploadProgressThresholdBytes = DEFAULT_UPLOAD_PROGRESS_THRESHOLD_BYTES,
 }: RecordingFormDialogProps) {
   const [form, setForm] = React.useState<RecordingFormValues>(empty);
   const [errors, setErrors] = React.useState<
@@ -213,6 +220,27 @@ export default function RecordingFormDialog({
               <Typography variant="caption" color="error" sx={{ mt: 0.75, display: "block" }}>
                 {errors.file}
               </Typography>
+            ) : null}
+
+            {form.file &&
+            form.file.size > uploadProgressThresholdBytes &&
+            uploadProgress != null &&
+            uploadProgress > 0 ? (
+              <Box sx={{ mt: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Uploading...
+                  </Typography>
+                  <Typography variant="caption" fontWeight={600}>
+                    {uploadProgress}%
+                  </Typography>
+                </Box>
+                <LinearProgress
+                  variant="determinate"
+                  value={uploadProgress}
+                  sx={{ height: 6, borderRadius: 1 }}
+                />
+              </Box>
             ) : null}
           </Box>
         ) : null}

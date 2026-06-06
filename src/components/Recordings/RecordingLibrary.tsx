@@ -32,6 +32,7 @@ import RecordingDeleteConfirmDialog from "./RecordingDeleteConfirmDialog";
 import BulkAssignRecordingsDialog, {
   BulkAssignTarget,
 } from "./BulkAssignRecordingsDialog";
+import { AxiosProgressEvent } from "axios";
 import { adminRecordingsApi } from "@/services/api";
 import { ApiError, Recording } from "@/types";
 
@@ -50,6 +51,7 @@ export default function RecordingLibrary() {
   const [formOpen, setFormOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<Recording | undefined>();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
@@ -116,6 +118,7 @@ export default function RecordingLibrary() {
 
   const handleOpenAdd = () => {
     setSubmitError(null);
+    setUploadProgress(null);
     setFormOpen(true);
   };
 
@@ -166,6 +169,7 @@ export default function RecordingLibrary() {
 
     setFormOpen(false);
     setSubmitError(null);
+    setUploadProgress(null);
   };
 
   const handleOpenDelete = (recording: Recording) => {
@@ -194,12 +198,20 @@ export default function RecordingLibrary() {
   const handleSave = async (values: RecordingFormValues) => {
     setIsSaving(true);
     setSubmitError(null);
+    setUploadProgress(0);
 
     try {
       if (!values.file) {
         setSubmitError("Audio file is required.");
         return;
       }
+
+      const onUploadProgress = (progressEvent: AxiosProgressEvent) => {
+        if (progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+        }
+      };
 
       const createdRecording = await adminRecordingsApi.create({
         title: values.title.trim(),
@@ -208,6 +220,7 @@ export default function RecordingLibrary() {
         notes: values.notes.trim() || null,
         mimeType: normalizeForServerMimeType(values.file),
         file: values.file,
+        onUploadProgress,
       });
 
       setRecordings((current) => [createdRecording, ...current]);
@@ -223,6 +236,7 @@ export default function RecordingLibrary() {
       );
     } finally {
       setIsSaving(false);
+      setUploadProgress(null);
     }
   };
 
@@ -562,6 +576,7 @@ export default function RecordingLibrary() {
         onSave={(values) => {
           void handleSave(values);
         }}
+        uploadProgress={uploadProgress}
       />
 
       <RecordingDeleteConfirmDialog

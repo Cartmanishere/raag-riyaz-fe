@@ -1,6 +1,7 @@
 import axios, {
   AxiosError,
   AxiosInstance,
+  AxiosProgressEvent,
   AxiosRequestConfig,
   AxiosResponse,
   InternalAxiosRequestConfig,
@@ -337,11 +338,13 @@ function toNullableField(value: string | null | undefined) {
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: getApiBaseUrl(),
-  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
+const DEFAULT_REQUEST_TIMEOUT = 30_000; // 30 seconds for regular requests
+const AUTH_REQUEST_TIMEOUT = 10_000; // 10 seconds for auth lifecycle requests
 
 let refreshPromise: Promise<string> | null = null;
 
@@ -356,7 +359,7 @@ async function refreshAccessToken() {
     { refresh_token: currentSession.refreshToken },
     {
       baseURL: apiClient.defaults.baseURL,
-      timeout: apiClient.defaults.timeout,
+      timeout: AUTH_REQUEST_TIMEOUT,
       headers: {
         "Content-Type": "application/json",
       },
@@ -413,7 +416,10 @@ apiClient.interceptors.response.use(
 );
 
 async function request<T>(config: RequestOptions): Promise<T> {
-  const response = await apiClient.request<T>(config);
+  const response = await apiClient.request<T>({
+    timeout: DEFAULT_REQUEST_TIMEOUT,
+    ...config,
+  });
   return response.data;
 }
 
@@ -710,7 +716,7 @@ export const adminRecordingsApi = {
     return mapRecording(response.recording);
   },
 
-  async create(payload: CreateRecordingRequest) {
+  async create(payload: CreateRecordingRequest & { onUploadProgress?: (progressEvent: AxiosProgressEvent) => void }) {
     const response = await request<{ recording: RecordingDto }>({
       url: "/admin/recordings",
       method: "POST",
@@ -725,6 +731,8 @@ export const adminRecordingsApi = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: 0, // no timeout for file uploads
+      onUploadProgress: payload.onUploadProgress,
     });
 
     return mapRecording(response.recording);
@@ -815,7 +823,7 @@ export const adminRecordingsApi = {
     return response.attachments.map(mapRecordingAttachment);
   },
 
-  async uploadAttachment(id: string, payload: UploadRecordingAttachmentRequest) {
+  async uploadAttachment(id: string, payload: UploadRecordingAttachmentRequest & { onUploadProgress?: (progressEvent: AxiosProgressEvent) => void }) {
     const response = await request<{ attachment: RecordingAttachmentDto }>({
       url: `/admin/recordings/${id}/attachments`,
       method: "POST",
@@ -827,6 +835,8 @@ export const adminRecordingsApi = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: 0, // no timeout for file uploads
+      onUploadProgress: payload.onUploadProgress,
     });
 
     return mapRecordingAttachment(response.attachment);
