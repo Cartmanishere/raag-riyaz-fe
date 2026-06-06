@@ -30,6 +30,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import RecordingFormDialog, {
   RecordingFormValues,
   inferAttachmentType,
+  AttachmentUploadStatus,
 } from "./RecordingFormDialog";
 import RecordingDeleteConfirmDialog from "./RecordingDeleteConfirmDialog";
 import BulkAssignRecordingsDialog, {
@@ -56,6 +57,7 @@ export default function RecordingLibrary() {
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = React.useState<number | null>(null);
   const [isUploadingAttachments, setIsUploadingAttachments] = React.useState(false);
+  const [attachmentUploadStates, setAttachmentUploadStates] = React.useState<(AttachmentUploadStatus | null)[]>([]);
   const [deleteTarget, setDeleteTarget] = React.useState<Recording | undefined>();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
@@ -234,11 +236,26 @@ export default function RecordingLibrary() {
         setUploadProgress(null);
         setIsUploadingAttachments(true);
 
-        for (const file of attachmentFiles) {
+        // Initialize all as "pending"
+        setAttachmentUploadStates(attachmentFiles.map(() => "pending"));
+
+        for (let i = 0; i < attachmentFiles.length; i++) {
+          const file = attachmentFiles[i];
           const type = inferAttachmentType(file);
           if (!type) {
+            setAttachmentUploadStates((prev) => {
+              const next = [...prev];
+              next[i] = "failed";
+              return next;
+            });
             continue;
           }
+
+          setAttachmentUploadStates((prev) => {
+            const next = [...prev];
+            next[i] = "uploading";
+            return next;
+          });
 
           try {
             await adminRecordingsApi.uploadAttachment(createdRecording.id, {
@@ -246,9 +263,18 @@ export default function RecordingLibrary() {
               type,
               mimeType: file.type || undefined,
             });
+
+            setAttachmentUploadStates((prev) => {
+              const next = [...prev];
+              next[i] = "done";
+              return next;
+            });
           } catch {
-            // Attachment upload failed silently; the recording is already created.
-            // The user can add attachments later on the recording detail page.
+            setAttachmentUploadStates((prev) => {
+              const next = [...prev];
+              next[i] = "failed";
+              return next;
+            });
           }
         }
 
@@ -269,6 +295,7 @@ export default function RecordingLibrary() {
       setIsSaving(false);
       setUploadProgress(null);
       setIsUploadingAttachments(false);
+      setAttachmentUploadStates([]);
     }
   };
 
@@ -604,6 +631,7 @@ export default function RecordingLibrary() {
         mode="add"
         isSaving={isSaving}
         isUploadingAttachments={isUploadingAttachments}
+        attachmentUploadStates={attachmentUploadStates}
         submitError={submitError}
         onClose={handleCloseForm}
         onSave={(values) => {

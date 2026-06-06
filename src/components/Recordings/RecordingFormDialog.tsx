@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -14,11 +15,15 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CloseIcon from "@mui/icons-material/Close";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { Recording, RecordingAttachmentType } from "@/types";
+
+export type AttachmentUploadStatus = "pending" | "uploading" | "done" | "failed";
 
 export interface RecordingFormValues {
   title: string;
@@ -45,6 +50,7 @@ interface RecordingFormDialogProps {
   recording?: Recording;
   isSaving: boolean;
   isUploadingAttachments?: boolean;
+  attachmentUploadStates?: (AttachmentUploadStatus | null)[];
   submitError: string | null;
   onClose: () => void;
   onSave: (values: RecordingFormValues) => void;
@@ -92,6 +98,7 @@ export default function RecordingFormDialog({
   recording,
   isSaving,
   isUploadingAttachments = false,
+  attachmentUploadStates,
   submitError,
   onClose,
   onSave,
@@ -179,8 +186,13 @@ export default function RecordingFormDialog({
 
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: "16px !important" }}>
         {submitError ? <Alert severity="error">{submitError}</Alert> : null}
-        {isUploadingAttachments ? (
-          <Alert severity="info">Recording saved. Uploading attachments...</Alert>
+        {isUploadingAttachments && attachmentUploadStates ? (
+          <Alert severity="info">
+            Recording saved. Uploading{" "}
+            {attachmentUploadStates.filter((s) => s === "done").length + (attachmentUploadStates.some((s) => s === "uploading") ? 1 : 0)}{" "}
+            of {attachmentUploadStates.length} attachment
+            {attachmentUploadStates.length !== 1 ? "s" : ""}...
+          </Alert>
         ) : null}
 
         <TextField
@@ -327,49 +339,61 @@ export default function RecordingFormDialog({
               />
             </Box>
 
-            {form.attachments.map((file, index) => (
-              <Box
-                key={`${file.name}-${index}`}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mt: 1,
-                  px: 1.5,
-                  py: 0.75,
-                  border: "1px solid",
-                  borderColor: "divider",
-                  borderRadius: 1,
-                  backgroundColor: "background.paper",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
-                  {inferAttachmentType(file) === "pdf" ? (
-                    <PictureAsPdfIcon fontSize="small" sx={{ color: "error.main", flexShrink: 0 }} />
+            {form.attachments.map((file, index) => {
+              const status = attachmentUploadStates?.[index];
+
+              return (
+                <Box
+                  key={`${file.name}-${index}`}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    mt: 1,
+                    px: 1.5,
+                    py: 0.75,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    backgroundColor: "background.paper",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                    {inferAttachmentType(file) === "pdf" ? (
+                      <PictureAsPdfIcon fontSize="small" sx={{ color: "error.main", flexShrink: 0 }} />
+                    ) : (
+                      <AddPhotoAlternateIcon fontSize="small" sx={{ color: "text.secondary", flexShrink: 0 }} />
+                    )}
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {file.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+                      {file.size < 1024 * 1024
+                        ? `${Math.round(file.size / 1024)} KB`
+                        : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}
+                    </Typography>
+                  </Box>
+                  {status === "uploading" ? (
+                    <CircularProgress size={18} sx={{ flexShrink: 0 }} />
+                  ) : status === "done" ? (
+                    <CheckCircleIcon fontSize="small" sx={{ color: "success.main", flexShrink: 0 }} />
+                  ) : status === "failed" ? (
+                    <ErrorOutlineIcon fontSize="small" sx={{ color: "error.main", flexShrink: 0 }} />
                   ) : (
-                    <AddPhotoAlternateIcon fontSize="small" sx={{ color: "text.secondary", flexShrink: 0 }} />
+                    <IconButton size="small" onClick={() => handleRemoveAttachment(index)} disabled={isSaving}>
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
                   )}
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {file.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
-                    {file.size < 1024 * 1024
-                      ? `${Math.round(file.size / 1024)} KB`
-                      : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}
-                  </Typography>
                 </Box>
-                <IconButton size="small" onClick={() => handleRemoveAttachment(index)} disabled={isSaving}>
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         ) : null}
       </DialogContent>
