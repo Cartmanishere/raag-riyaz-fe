@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Alert,
   Box,
@@ -15,6 +16,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
 import CloseIcon from "@mui/icons-material/Close";
@@ -246,32 +248,56 @@ export default function StudentRecordingPracticeScreen({
     setImagePreviewRotation(0);
   };
 
+  const backLink = (
+    <Link href="/student-dashboard" style={{ textDecoration: "none" }}>
+      <Box
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.5,
+          color: "text.secondary",
+          "&:hover": { color: "primary.main" },
+        }}
+      >
+        <ArrowBackIcon fontSize="small" />
+        <Typography variant="body2">Back to Practice</Typography>
+      </Box>
+    </Link>
+  );
+
   if (isPageLoading) {
     return (
-      <Stack spacing={1.5} alignItems="center" sx={{ py: 10 }}>
-        <CircularProgress size={32} />
-        <Typography variant="body2" color="text.secondary">
-          Loading practice screen...
-        </Typography>
-      </Stack>
+      <Box>
+        <Box sx={{ mb: 3 }}>{backLink}</Box>
+        <Stack spacing={1.5} alignItems="center" sx={{ py: 10 }}>
+          <CircularProgress size={32} />
+          <Typography variant="body2" color="text.secondary">
+            Loading practice screen...
+          </Typography>
+        </Stack>
+      </Box>
     );
   }
 
   if (pageError || !recording) {
     return (
-      <Stack spacing={1.5}>
-        <Alert severity="error">{pageError?.message ?? "Unable to load this recording."}</Alert>
-        <Box>
-          <Button variant="outlined" onClick={() => void loadRecording()}>
-            Retry
-          </Button>
-        </Box>
-      </Stack>
+      <Box>
+        <Box sx={{ mb: 3 }}>{backLink}</Box>
+        <Stack spacing={1.5}>
+          <Alert severity="error">{pageError?.message ?? "Unable to load this recording."}</Alert>
+          <Box>
+            <Button variant="outlined" onClick={() => void loadRecording()}>
+              Retry
+            </Button>
+          </Box>
+        </Stack>
+      </Box>
     );
   }
 
   return (
     <>
+      <Box>{backLink}</Box>
       <Stack spacing={3}>
         <Box
           sx={{
