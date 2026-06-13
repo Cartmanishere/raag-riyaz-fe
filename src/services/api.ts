@@ -576,11 +576,11 @@ export const adminUsersApi = {
       method: "POST",
       data: {
         email: payload.email,
-        password: payload.password,
         status: payload.status,
         role: payload.role,
         display_name: payload.displayName,
         phone: payload.phone,
+        ...(payload.password ? { password: payload.password } : {}),
       },
     });
 

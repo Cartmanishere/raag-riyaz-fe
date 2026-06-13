@@ -387,7 +387,7 @@ export interface ResetPasswordRequestDto {
 
 export interface CreateUserRequest {
   email: string;
-  password: string;
+  password?: string;
   status?: string;
   role?: string;
   displayName?: string | null;

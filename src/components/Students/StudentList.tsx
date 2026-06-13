@@ -137,11 +137,11 @@ export default function StudentList() {
       if (drawerMode === "add") {
         const createdStudent = await adminUsersApi.create({
           email: values.email,
-          password: values.password,
           status: values.status,
           role: USER_ROLE,
           displayName: values.displayName,
           phone: values.phone || null,
+          ...(values.password ? { password: values.password } : {}),
         });
 
         setStudents((current) => [createdStudent, ...current]);

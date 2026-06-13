@@ -23,7 +23,7 @@ export interface StudentFormValues {
   email: string;
   phone: string;
   status: StudentStatus;
-  password: string;
+  password?: string;
 }
 
 interface StudentFormDrawerProps {
@@ -94,8 +94,8 @@ export default function StudentFormDrawer({
       nextErrors.email = "Enter a valid email address";
     }
 
-    if (mode === "add" && !form.password.trim()) {
-      nextErrors.password = "Password is required";
+    if (mode === "add" && form.password && !form.password.trim()) {
+      nextErrors.password = "Password cannot be only spaces";
     }
 
     return nextErrors;
@@ -114,7 +114,7 @@ export default function StudentFormDrawer({
       displayName: form.displayName.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
-      password: form.password.trim(),
+      password: form.password?.trim() ?? "",
     });
   };
 
@@ -195,11 +195,10 @@ export default function StudentFormDrawer({
           label={mode === "add" ? "Password" : "Password (leave blank to keep current)"}
           fullWidth
           type="password"
-          value={form.password}
+          value={form.password ?? ""}
           onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
           error={!!errors.password}
-          helperText={errors.password ?? (mode === "add" ? undefined : "Optional")}
-          required={mode === "add"}
+          helperText={errors.password ?? (mode === "add" ? "Optional — user will receive a password reset link" : "Optional")}
           disabled={isSaving}
         />
 
