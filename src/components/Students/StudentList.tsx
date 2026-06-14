@@ -257,7 +257,6 @@ export default function StudentList() {
                 <TableCell sx={{ fontWeight: 700 }}>Student</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Phone</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>
                   Actions
                 </TableCell>
@@ -280,9 +279,6 @@ export default function StudentList() {
                   </TableCell>
                   <TableCell>{student.email}</TableCell>
                   <TableCell>{student.phone || "—"}</TableCell>
-                  <TableCell sx={{ textTransform: "capitalize" }}>
-                    {student.status || "—"}
-                  </TableCell>
                   <TableCell align="right">
                     <Button
                       size="small"
